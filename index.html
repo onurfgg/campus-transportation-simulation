@@ -65,14 +65,14 @@
                 <span>Sefer Sıklığı</span>
                 <span class="slider-val"><span id="i-v">3</span> dk</span>
             </div>
-            <input type="range" id="i-in" min="1" max="15" value="3">
+            <input type="range" id="i-in" min="1" max="50" value="3">
         </div>
         <div class="slider-group">
             <div class="slider-header">
                 <span>Otobüs Kapasitesi</span>
                 <span class="slider-val"><span id="c-v">78</span> kişi</span>
             </div>
-            <input type="range" id="c-in" min="50" max="200" value="78">
+            <input type="range" id="c-in" min="30" max="250" value="78">
         </div>
     </div>
 
@@ -151,7 +151,7 @@
         const rhoCard = d3.select("#rho-card");
 
         if(isUnstable) {
-            statusBadge.text("⚠️ SİSTEM İSTİKRARSIZ").style("background", "var(--danger)");
+            statusBadge.text("⚠️ SİSTEM İSTİKRARSIZ (DARBOĞAZ) ").style("background", "var(--danger)");
             rhoCard.style("background", "var(--danger)");
         } else {
             statusBadge.text("✅ SİSTEM KARARLI").style("background", "var(--safe)");

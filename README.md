@@ -20,4 +20,4 @@ As an Industrial Engineering student, I approached this daily logistical problem
 ## Proposed Optimization
 Rather than simply increasing the number of buses, integrating micro-mobility solutions (e.g., e-scooters) to capture 15-20% of the peak demand can significantly reduce the arrival rate ($\lambda$), balancing the system ($\rho \le 1$) and preventing exponential queue growth.
 
-https://onurfgg.github.io/campus-transportation-simulation/
+👉 **Live Demo:** [Buraya Tıklayın](https://onurfgg.github.io/campus-transportation-simulation/))

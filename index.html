@@ -11,7 +11,209 @@
 </head>
 <body>
     <h1>EGO 130 Hat Analizi ve Kuyruk Simülasyonu</h1>
-    <div class="controls">
+    <div class="controls<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EGO 130 Kuyruk Simülatörü</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { font-size: 24px; margin-top: 0; margin-bottom: 20px; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        .controls { display: flex; flex-wrap: wrap; gap: 20px; background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e9ecef; }
+        .control-group { display: flex; flex-direction: column; flex: 1; min-width: 200px; }
+        label { font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #34495e; }
+        input[type=range] { width: 100%; cursor: pointer; }
+        .value-display { font-weight: bold; color: #2980b9; font-size: 16px; }
+        .kpi-container { display: flex; gap: 20px; margin-bottom: 20px; }
+        .kpi-card { flex: 1; color: white; padding: 20px; border-radius: 8px; text-align: center; transition: background-color 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .kpi-value { font-size: 28px; font-weight: bold; margin-top: 8px; }
+        .kpi-title { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+        #chart { width: 100%; height: 400px; }
+        .line { fill: none; stroke-width: 3px; transition: stroke 0.3s; }
+        .area { opacity: 0.15; transition: fill 0.3s; }
+        .axis text { font-size: 12px; color: #7f8c8d; }
+        .axis path, .axis line { stroke: #bdc3c7; }
+        .grid line { stroke: #ecf0f1; stroke-opacity: 0.7; shape-rendering: crispEdges; }
+        .grid path { stroke-width: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚌 EGO 130: Darboğaz (Bottleneck) ve Kuyruk Simülatörü</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>Öğrenci Geliş Hızı (λ): <span id="lambda-val" class="value-display">30</span> kişi/dk</label>
+                <input type="range" id="lambda" min="10" max="60" value="30" step="1">
+            </div>
+            <div class="control-group">
+                <label>Otobüs Sefer Sıklığı: <span id="interval-val" class="value-display">5</span> dk</label>
+                <input type="range" id="interval" min="2" max="15" value="5" step="1">
+            </div>
+            <div class="control-group">
+                <label>Otobüs Kapasitesi: <span id="capacity-val" class="value-display">120</span> kişi</label>
+                <input type="range" id="capacity" min="50" max="150" value="120" step="5">
+            </div>
+        </div>
+
+        <div class="kpi-container">
+            <div class="kpi-card" id="kpi-rho">
+                <div class="kpi-title">Trafik Yoğunluğu (ρ = λ/μ)</div>
+                <div class="kpi-value">1.25</div>
+            </div>
+            <div class="kpi-card" id="kpi-status">
+                <div class="kpi-title">Sistem Durumu</div>
+                <div class="kpi-value">Darboğaz (Kuyruk Uzar)</div>
+            </div>
+        </div>
+
+        <div id="chart"></div>
+    </div>
+
+    <script>
+        // --- D3.js Setup ve Çizim Alanı ---
+        const chartDiv = document.getElementById('chart');
+        const width = chartDiv.clientWidth;
+        const height = 400;
+        const margin = { top: 20, right: 20, bottom: 40, left: 60 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const g = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const xScale = d3.scaleLinear().domain([0, 60]).range([0, innerWidth]);
+        const yScale = d3.scaleLinear().range([innerHeight, 0]);
+
+        // Eksenler
+        const xAxis = d3.axisBottom(xScale).ticks(12).tickFormat(d => d + " dk");
+        const yAxis = d3.axisLeft(yScale);
+
+        const xAxisGroup = g.append("g")
+            .attr("class", "axis")
+            .attr("transform", `translate(0,${innerHeight})`);
+
+        const yAxisGroup = g.append("g")
+            .attr("class", "axis");
+
+        // Arka Plan Izgaraları (Grid)
+        const makeYLines = () => d3.axisLeft(yScale).ticks(6);
+        const gridGroup = g.append("g").attr("class", "grid");
+
+        // Çizgi ve Alan Tanımları (StepCurve kuyruklar için en doğrusudur)
+        const areaGenerator = d3.area()
+            .x(d => xScale(d.time))
+            .y0(innerHeight)
+            .y1(d => yScale(d.queue))
+            .curve(d3.curveStepAfter);
+
+        const lineGenerator = d3.line()
+            .x(d => xScale(d.time))
+            .y(d => yScale(d.queue))
+            .curve(d3.curveStepAfter); 
+
+        const areaPath = g.append("path").attr("class", "area");
+        const linePath = g.append("path").attr("class", "line");
+
+        // --- Simülasyon Matematiği ---
+        function generateData(lambda, interval, capacity) {
+            let data = [];
+            let queue = 0;
+            for (let t = 0; t <= 60; t++) {
+                queue += lambda; // Gelen öğrenciler
+                if (t > 0 && t % interval === 0) {
+                    let boarded = Math.min(queue, capacity); // Otobüse binenler
+                    queue -= boarded; 
+                }
+                data.push({ time: t, queue: queue });
+            }
+            return data;
+        }
+
+        // --- Arayüz Güncelleme Fonksiyonu ---
+        function update() {
+            // Slider değerlerini al
+            const lambda = parseInt(document.getElementById('lambda').value);
+            const interval = parseInt(document.getElementById('interval').value);
+            const capacity = parseInt(document.getElementById('capacity').value);
+
+            // Metinleri güncelle
+            document.getElementById('lambda-val').innerText = lambda;
+            document.getElementById('interval-val').innerText = interval;
+            document.getElementById('capacity-val').innerText = capacity;
+
+            // KPI Hesaplamaları (Trafik Yoğunluğu)
+            // mu (Hizmet hızı) = Kapasite / Sıklık (Dakika başına taşınan kişi)
+            const mu = capacity / interval;
+            const rho = lambda / mu;
+            
+            const kpiRho = document.getElementById('kpi-rho');
+            const kpiStatus = document.getElementById('kpi-status');
+            
+            kpiRho.querySelector('.kpi-value').innerText = rho.toFixed(2);
+            
+            // Sistem Kararlılık Kontrolü ve Renk Değişimi
+            const dangerColor = "#e74c3c"; // Kırmızı (Darboğaz)
+            const safeColor = "#2ecc71";   // Yeşil (Kararlı)
+
+            if (rho >= 1) {
+                kpiRho.style.backgroundColor = dangerColor;
+                kpiStatus.style.backgroundColor = dangerColor;
+                kpiStatus.querySelector('.kpi-value').innerText = "Kritik Darboğaz";
+                linePath.style("stroke", dangerColor);
+                areaPath.style("fill", dangerColor);
+            } else {
+                kpiRho.style.backgroundColor = safeColor;
+                kpiStatus.style.backgroundColor = safeColor;
+                kpiStatus.querySelector('.kpi-value').innerText = "Sistem Kararlı";
+                linePath.style("stroke", safeColor);
+                areaPath.style("fill", safeColor);
+            }
+
+            // Veriyi Üret
+            const data = generateData(lambda, interval, capacity);
+
+            // Grafiği Ölçeklendir (Maksimum kuyruk sayısına göre)
+            const maxQueue = d3.max(data, d => d.queue);
+            yScale.domain([0, maxQueue === 0 ? 50 : maxQueue * 1.1]); // Boşsa bile biraz pay bırak
+
+            // Eksenleri ve Çizgileri Animasyonla Güncelle
+            xAxisGroup.call(xAxis);
+            yAxisGroup.transition().duration(200).call(yAxis);
+            gridGroup.transition().duration(200).call(makeYLines().tickSize(-innerWidth).tickFormat(""));
+
+            areaPath.datum(data).transition().duration(200).attr("d", areaGenerator);
+            linePath.datum(data).transition().duration(200).attr("d", lineGenerator);
+        }
+
+        // --- Olay Dinleyicileri (Event Listeners) ---
+        // Sliderlar her oynatıldığında update() fonksiyonunu tetikler
+        document.getElementById('lambda').addEventListener('input', update);
+        document.getElementById('interval').addEventListener('input', update);
+        document.getElementById('capacity').addEventListener('input', update);
+
+        // Sayfa ilk yüklendiğinde grafiği çiz
+        update();
+
+        // Ekran boyutu değiştiğinde grafiği yeniden boyutlandırmak için (Responsive)
+        window.addEventListener('resize', () => {
+            const newWidth = chartDiv.clientWidth;
+            d3.select("svg").attr("width", newWidth);
+            xScale.range([0, newWidth - margin.left - margin.right]);
+            xAxisGroup.call(xAxis);
+            gridGroup.call(makeYLines().tickSize(-(newWidth - margin.left - margin.right)).tickFormat(""));
+            update();
+        });
+    </script>
+</body>
+</html>
         <label>Öğrenci Geliş Hızı (λ): <input type="range" id="lambda" min="10" max="60" value="30"></label>
         <span id="lambdaVal">30</span> kişi/dk
     </div>

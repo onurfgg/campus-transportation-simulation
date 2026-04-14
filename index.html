@@ -3,174 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EGO 130 | Dijital İkiz Simülasyonu</title>
+    <title>EGO 130 | Gelişmiş Dijital İkiz</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-        :root { --danger: #e74c3c; --safe: #2ecc71; --primary: #3498db; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: var(--bg); color: #2c3e50; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h1 { margin: 0 0 20px 0; font-size: 22px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        :root { --danger: #e74c3c; --safe: #2ecc71; --primary: #3498db; --dark: #2c3e50; }
+        body { font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 15px; background: #f0f2f5; }
+        .dashboard { max-width: 1100px; margin: 0 auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
         
-        /* Kontrol Paneli */
-        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; background: #f1f3f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .control-group { display: flex; flex-direction: column; }
-        label { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
-        .val { color: var(--primary); font-weight: bold; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+        h1 { font-size: 20px; margin: 0; color: var(--dark); }
+        
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .group { display: flex; flex-direction: column; }
+        label { font-size: 12px; font-weight: 700; margin-bottom: 5px; color: #666; }
+        input[type=range] { width: 100%; accent-color: var(--primary); }
+        .val-tag { color: var(--primary); font-weight: 800; }
 
-        /* KPI Kartları */
-        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .kpi-card { padding: 15px; border-radius: 8px; color: white; text-align: center; transition: 0.3s; }
-        .kpi-title { font-size: 12px; opacity: 0.9; text-transform: uppercase; }
-        .kpi-value { font-size: 24px; font-weight: bold; margin-top: 5px; }
+        .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .card { padding: 15px; border-radius: 10px; color: white; text-align: center; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-label { font-size: 11px; text-transform: uppercase; opacity: 0.8; font-weight: 600; }
+        .card-val { font-size: 26px; font-weight: 800; margin-top: 5px; }
 
-        /* Animasyon Alanı */
-        #stage-container { position: relative; width: 100%; height: 180px; background: #e9ecef; border-radius: 8px; overflow: hidden; margin-bottom: 20px; border: 2px solid #dee2e6; }
-        .road { position: absolute; bottom: 0; width: 100%; height: 60px; background: #34495e; }
-        .bus-stop { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); width: 120px; height: 10px; background: #f1c40f; border-radius: 5px 5px 0 0; }
+        #animation-box { position: relative; width: 100%; height: 200px; background: #dfe4ea; border-radius: 10px; overflow: hidden; border: 2px solid #ced4da; }
+        .road { position: absolute; bottom: 0; width: 100%; height: 50px; background: #3d3d3d; }
+        .stop-mark { position: absolute; bottom: 50px; left: 45%; width: 10%; height: 6px; background: #f1c40f; border-radius: 3px 3px 0 0; }
 
-        /* Grafik Alanı */
-        #chart { width: 100%; height: 250px; background: #fff; }
+        #chart-box { width: 100%; height: 260px; margin-top: 10px; }
+        .student { stroke: #fff; stroke-width: 0.5; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🚌 EGO 130: Dijital İkiz ve Operasyonel Simülasyon</h1>
+<div class="dashboard">
+    <header>
+        <h1>🚌 EGO 130 Hacettepe | Operasyonel Dijital İkiz</h1>
+        <div id="status-badge" style="font-size: 12px; font-weight: bold; color: #666;">SİSTEM AKTİF</div>
+    </header>
 
     <div class="controls">
-        <div class="control-group">
-            <label>Varış Hızı (λ): <span class="val" id="l-val">30</span> öğrenci/dk</label>
-            <input type="range" id="lambda" min="10" max="60" value="30">
+        <div class="group">
+            <label>Varış Hızı (λ): <span class="val-tag" id="l-v">30</span> öğr/dk</label>
+            <input type="range" id="l-in" min="10" max="60" value="30">
         </div>
-        <div class="control-group">
-            <label>Sefer Sıklığı: <span class="val" id="i-val">5</span> dk</label>
-            <input type="range" id="interval" min="2" max="15" value="5">
+        <div class="group">
+            <label>Sefer Sıklığı: <span class="val-tag" id="i-v">5</span> dk</label>
+            <input type="range" id="i-in" min="2" max="15" value="5">
         </div>
-        <div class="control-group">
-            <label>Otobüs Kapasitesi: <span class="val" id="c-val">120</span> kişi</label>
-            <input type="range" id="capacity" min="50" max="150" value="120">
-        </div>
-    </div>
-
-    <div class="kpi-grid">
-        <div class="kpi-card" id="rho-card">
-            <div class="kpi-title">Trafik Yoğunluğu (ρ)</div>
-            <div class="kpi-value" id="rho-val">1.25</div>
-        </div>
-        <div class="kpi-card" id="q-card">
-            <div class="kpi-title">Anlık Kuyruk</div>
-            <div class="kpi-value" id="q-val">0</div>
+        <div class="group">
+            <label>Otobüs Kapasitesi: <span class="val-tag" id="c-v">120</span> kişi</label>
+            <input type="range" id="c-in" min="50" max="150" value="120">
         </div>
     </div>
 
-    <div id="stage-container">
+    <div class="kpi-row">
+        <div class="card" id="rho-card" style="background: var(--safe);">
+            <div class="card-label">Trafik Yoğunluğu (ρ)</div>
+            <div class="card-val" id="rho-val">1.25</div>
+        </div>
+        <div class="card" id="q-card" style="background: #34495e;">
+            <div class="card-label">Bekleyen Öğrenci</div>
+            <div class="card-val" id="q-val">0</div>
+        </div>
+    </div>
+
+    <div id="animation-box">
         <div class="road"></div>
-        <div class="bus-stop"></div>
-        <svg id="stage" width="100%" height="180"></svg>
+        <div class="stop-mark"></div>
+        <svg id="stage" width="100%" height="200"></svg>
     </div>
 
-    <div id="chart"></div>
+    <div id="chart-box"></div>
 </div>
 
 <script>
-    // --- Ayarlar & Değişkenler ---
-    let state = { lambda: 30, interval: 5, capacity: 120, queue: 0, time: 0, history: [] };
+    // --- State & Config ---
+    let config = { lambda: 30, interval: 5, capacity: 120, queue: 0, time: 0, history: [] };
     const stage = d3.select("#stage");
-    const chartDiv = d3.select("#chart");
+    const chartBox = d3.select("#chart-box");
     
-    // Grafik Ayarları
-    const margin = {top: 10, right: 20, bottom: 30, left: 40};
-    const width = document.querySelector("#chart").clientWidth - margin.left - margin.right;
-    const height = 250 - margin.top - margin.bottom;
-    
-    const svg = chartDiv.append("svg")
+    // Grafik Hazırlığı
+    const margin = {top: 15, right: 30, bottom: 30, left: 45};
+    let width = document.querySelector("#chart-box").clientWidth - margin.left - margin.right;
+    const height = 260 - margin.top - margin.bottom;
+
+    const svg = chartBox.append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
       .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
     const x = d3.scaleLinear().domain([0, 60]).range([0, width]);
-    const y = d3.scaleLinear().domain([0, 200]).range([height, 0]);
+    const y = d3.scaleLinear().domain([0, 250]).range([height, 0]);
 
     svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).ticks(10).tickFormat(d => d + "m"));
     const yAxis = svg.append("g").call(d3.axisLeft(y));
-    const line = svg.append("path").attr("fill", "none").attr("stroke", "var(--primary)").attr("stroke-width", 2);
+    const path = svg.append("path").attr("fill", "none").attr("stroke", "#3498db").attr("stroke-width", 3);
 
-    // --- Simülasyon Döngüsü (Her saniye 1 simülasyon dakikasıdır) ---
-    setInterval(() => {
-        state.time++;
-        if(state.time > 60) { state.time = 0; state.history = []; state.queue = 0; }
-
-        // 1. Yeni Öğrenciler Gelir
-        state.queue += state.lambda;
-        
-        // 2. Otobüs Gelir mi?
-        if(state.time % state.interval === 0) {
-            animateBus();
-            setTimeout(() => {
-                let boarded = Math.min(state.queue, state.capacity);
-                state.queue -= boarded;
-                updateDisplay();
-            }, 500);
-        }
-
-        state.history.push({t: state.time, q: state.queue});
-        updateDisplay();
-        drawStudents();
-    }, 1000);
-
-    function updateDisplay() {
-        const rho = (state.lambda * state.interval) / state.capacity;
-        
-        d3.select("#l-val").text(state.lambda);
-        d3.select("#i-val").text(state.interval);
-        d3.select("#c-val").text(state.capacity);
-        d3.select("#q-val").text(Math.round(state.queue));
+    // --- Core Logic ---
+    function updateDashboard() {
+        const rho = (config.lambda * config.interval) / config.capacity;
+        d3.select("#l-v").text(config.lambda);
+        d3.select("#i-v").text(config.interval);
+        d3.select("#c-v").text(config.capacity);
+        d3.select("#q-val").text(Math.round(config.queue));
         d3.select("#rho-val").text(rho.toFixed(2));
 
-        const isDanger = rho >= 1;
-        d3.select("#rho-card").style("background", isDanger ? "var(--danger)" : "var(--safe)");
-        d3.select("#q-card").style("background", isDanger ? "#34495e" : "#7f8c8d");
+        const isFail = rho >= 1;
+        d3.select("#rho-card").style("background", isFail ? "var(--danger)" : "var(--safe)");
+        d3.select("#status-badge").text(isFail ? "⚠️ KRİTİK DARBOĞAZ" : "✅ SİSTEM KARARLI").style("color", isFail ? "var(--danger)" : "var(--safe)");
 
-        // Grafik Güncelle
-        y.domain([0, Math.max(200, d3.max(state.history, d => d.q) || 0)]);
-        yAxis.call(d3.axisLeft(y));
-        line.datum(state.history).attr("d", d3.line().x(d => x(d.t)).y(d => y(d.q)));
+        // Grafik Güncelleme
+        y.domain([0, Math.max(250, d3.max(config.history, d => d.q) * 1.2 || 0)]);
+        yAxis.transition().duration(300).call(d3.axisLeft(y));
+        path.datum(config.history).attr("d", d3.line().x(d => x(d.t)).y(d => y(d.q)));
     }
 
-    function drawStudents() {
-        // Temsili öğrenci noktaları (Kuyruk görseli)
-        const dotCount = Math.min(Math.floor(state.queue / 5), 150); 
-        const dots = Array.from({length: dotCount}, (_, i) => ({
+    function renderStudents() {
+        // SVG genişliğini anlık alarak yerleşimi hesapla
+        const stageW = document.querySelector("#stage").clientWidth;
+        const waitX = stageW * 0.5; // Durak merkezi
+        
+        const count = Math.min(Math.floor(config.queue / 4), 200); // Temsili nokta sayısı
+        const studentData = Array.from({length: count}, (_, i) => ({
             id: i,
-            x: 500 + (i % 15) * 6 - 45,
-            y: 110 - Math.floor(i / 15) * 6
+            x: waitX + (i % 15) * 7 - 50,
+            y: 140 - Math.floor(i / 15) * 7
         }));
 
-        const s = stage.selectAll(".student").data(dots, d => d.id);
-        s.enter().append("circle").attr("class", "student")
-            .attr("r", 2).attr("fill", "#bdc3c7")
+        const circles = stage.selectAll(".student").data(studentData, d => d.id);
+        circles.enter().append("circle").attr("class", "student")
+            .attr("r", 2.5).attr("fill", "#95a5a6")
             .attr("cx", d => d.x).attr("cy", d => d.y);
-        s.exit().remove();
+        circles.exit().remove();
     }
 
-    function animateBus() {
-        const bus = stage.append("rect")
-            .attr("x", -100).attr("y", 130)
-            .attr("width", 80).attr("height", 35)
-            .attr("rx", 5).attr("fill", "#f1c40f");
+    function spawnBus() {
+        const stageW = document.querySelector("#stage").clientWidth;
+        const stopPos = stageW * 0.45;
 
-        bus.transition().duration(500).attr("x", 460) // Durağa gelir
-           .transition().delay(1000).duration(500).attr("x", 1000) // Gider
+        const bus = stage.append("g");
+        bus.append("rect").attr("width", 90).attr("height", 38).attr("rx", 6).attr("fill", "#f1c40f");
+        bus.append("rect").attr("width", 20).attr("height", 25).attr("x", 65).attr("y", 5).attr("fill", "#34495e").attr("opacity", 0.3); // Cam
+        
+        bus.attr("transform", `translate(-100, 155)`)
+           .transition().duration(800).ease(d3.easeQuadOut).attr("transform", `translate(${stopPos}, 155)`) // Durağa gel
+           .transition().delay(1200).duration(800).ease(d3.easeQuadIn).attr("transform", `translate(${stageW + 100}, 155)`) // Git
            .remove();
+
+        // Öğrenciler otobüse biner
+        setTimeout(() => {
+            let boarded = Math.min(config.queue, config.capacity);
+            config.queue -= boarded;
+            renderStudents();
+            updateDashboard();
+        }, 1200);
     }
 
-    // Input Listeners
-    d3.select("#lambda").on("input", function() { state.lambda = +this.value; updateDisplay(); });
-    d3.select("#interval").on("input", function() { state.interval = +this.value; updateDisplay(); });
-    d3.select("#capacity").on("input", function() { state.capacity = +this.value; updateDisplay(); });
+    // --- Main Loop ---
+    setInterval(() => {
+        config.time++;
+        if(config.time > 60) { config.time = 0; config.history = []; config.queue = 0; }
 
-    updateDisplay();
+        config.queue += config.lambda;
+        config.history.push({t: config.time, q: config.queue});
+
+        if(config.time % config.interval === 0) spawnBus();
+
+        renderStudents();
+        updateDashboard();
+    }, 1000);
+
+    // --- Listeners ---
+    d3.select("#l-in").on("input", function() { config.lambda = +this.value; updateDashboard(); });
+    d3.select("#i-in").on("input", function() { config.interval = +this.value; updateDashboard(); });
+    d3.select("#c-in").on("input", function() { config.capacity = +this.value; updateDashboard(); });
+
+    updateDashboard();
 </script>
 
 </body>

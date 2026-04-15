@@ -3,87 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EGO 130 | 3D Dijital İkiz Simülasyonu</title>
+    <title>EGO 130 | V7 Mühendislik Paneli</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-        :root { --danger: #e74c3c; --safe: #2ecc71; --dark: #2c3e50; --bg: rgba(255, 255, 255, 0.95); }
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: #a2d2ff; }
+        :root { --accent: #3498db; --bg-glass: rgba(255, 255, 255, 0.85); --text: #2c3e50; }
+        body { margin: 0; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; background: #cce0ff; }
         
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; }
+        #canvas-container { position: absolute; width: 100vw; height: 100vh; z-index: 0; }
+
+        /* Sol Kenar Paneli - Görüşü Kapatmayan Tasarım */
+        .sidebar {
+            position: absolute; top: 20px; left: 20px; width: 300px; z-index: 10;
+            background: var(--bg-glass); backdrop-filter: blur(12px);
+            padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        h1 { font-size: 16px; margin: 0 0 15px 0; color: var(--text); border-bottom: 1px solid #ddd; padding-bottom: 10px; }
         
-        #ui-layer { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 1100px; z-index: 10; pointer-events: none; }
-        .panel { background: var(--bg); padding: 20px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); backdrop-filter: blur(10px); pointer-events: auto; border: 1px solid rgba(255,255,255,0.5); }
-        
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; margin-bottom: 20px; }
-        h1 { margin: 0; font-size: 20px; color: var(--dark); font-weight: 800; }
-        #status-badge { padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 13px; color: white; background: var(--safe); transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        
-        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 20px; }
-        .group { display: flex; flex-direction: column; }
-        label { font-size: 13px; font-weight: 700; color: #4a5568; margin-bottom: 8px; display: flex; justify-content: space-between;}
-        input[type=range] { width: 100%; cursor: pointer; accent-color: #3498db; }
-        .val-tag { color: #3498db; font-weight: 900; font-size: 15px; }
-        
-        .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { padding: 20px; border-radius: 10px; text-align: center; color: white; transition: 0.4s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .card-title { font-size: 12px; text-transform: uppercase; font-weight: 700; opacity: 0.9; letter-spacing: 1px; }
-        .card-val { font-size: 32px; font-weight: 900; margin-top: 5px; }
+        .control-group { margin-bottom: 15px; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #666; margin-bottom: 5px; text-transform: uppercase; }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: var(--accent); }
+        .val-disp { float: right; color: var(--accent); font-weight: 800; }
+
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .kpi-box { background: #fff; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
+        .kpi-title { font-size: 9px; color: #888; font-weight: bold; }
+        .kpi-val { font-size: 18px; font-weight: 800; color: var(--text); }
+
+        /* Grafik Alanı - Sol Alt */
+        #chart-container {
+            position: absolute; bottom: 20px; left: 20px; width: 340px; height: 160px;
+            background: var(--bg-glass); backdrop-filter: blur(8px);
+            border-radius: 12px; padding: 10px; z-index: 10; border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        #status-tag { 
+            display: inline-block; margin-top: 10px; padding: 4px 8px; border-radius: 4px; 
+            font-size: 10px; font-weight: bold; color: white; width: 100%; text-align: center;
+        }
     </style>
 </head>
 <body>
 
 <div id="canvas-container"></div>
 
-<div id="ui-layer">
-    <div class="panel">
-        <header>
-            <h1>🚌 EGO 130 Hacettepe | 3D Operasyonel Dijital İkiz</h1>
-            <div id="status-badge">✅ SİSTEM KARARLI</div>
-        </header>
-        
-        <div class="controls">
-            <div class="group">
-                <label><span>Varış Hızı (λ)</span> <span class="val-tag"><span id="l-v">18</span> öğr/dk</span></label>
-                <input type="range" id="l-in" min="1" max="100" value="18">
-            </div>
-            <div class="group">
-                <label><span>Sefer Sıklığı</span> <span class="val-tag"><span id="i-v">3</span> dk</span></label>
-                <input type="range" id="i-in" min="1" max="15" value="3">
-            </div>
-            <div class="group">
-                <label><span>Otobüs Kapasitesi</span> <span class="val-tag"><span id="c-v">78</span> kişi</span></label>
-                <input type="range" id="c-in" min="50" max="200" value="78">
-            </div>
-        </div>
+<div class="sidebar">
+    <h1>📊 EGO 130 Operasyonel İzleme</h1>
+    
+    <div class="control-group">
+        <label>Varış Hızı (λ) <span class="val-disp" id="l-v">18</span></label>
+        <input type="range" id="l-in" min="1" max="100" value="18">
+    </div>
+    <div class="control-group">
+        <label>Sefer Sıklığı <span class="val-disp" id="i-v">3</span></label>
+        <input type="range" id="i-in" min="1" max="15" value="3">
+    </div>
+    <div class="control-group">
+        <label>Otobüs Kapasitesi <span class="val-disp" id="c-v">78</span></label>
+        <input type="range" id="c-in" min="50" max="300" value="78">
+    </div>
 
-        <div class="kpi-row">
-            <div class="card" id="rho-card" style="background: var(--safe);">
-                <div class="card-title">Trafik Yoğunluğu (ρ)</div>
-                <div class="card-val" id="rho-val">0.69</div>
-            </div>
-            <div class="card" style="background: var(--dark);">
-                <div class="card-title">Kuyruktaki Öğrenci</div>
-                <div class="card-val" id="q-val">0</div>
-            </div>
+    <div class="kpi-grid">
+        <div class="kpi-box">
+            <div class="kpi-title">YOĞUNLUK (ρ)</div>
+            <div class="kpi-val" id="rho-val">0.69</div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-title">KUYRUK</div>
+            <div class="kpi-val" id="q-val">0</div>
         </div>
     </div>
+    <div id="status-tag" style="background: #2ecc71;">✅ SİSTEM KARARLI</div>
 </div>
 
+<div id="chart-container"></div>
+
 <script>
-    // --- SİMÜLASYON DURUMU ---
-    let state = { lambda: 18, interval: 3, capacity: 78, queue: 0, time: 0 };
-    let studentMeshes = [];
-    let wheels = [];
-    
-    // Otobüs Kinematiği için Durum Makinesi
+    // --- KONFİGÜRASYON ---
+    let state = { lambda: 18, interval: 3, capacity: 78, queue: 0, time: 0, history: [] };
     let busState = "idle"; // idle, arriving, boarding, departing
     let busTimer = 0;
-    const TIME_ARRIVE = 1.5;  // Geliş süresi (saniye)
-    const TIME_BOARD = 1.0;   // Yolcu alma süresi (saniye)
-    const TIME_DEPART = 1.5;  // Gidiş süresi (saniye)
+    const busSpeed = 1.8; 
 
-    // --- ARAYÜZ (UI) GÜNCELLEME ---
-    function updateUI() {
+    // --- D3.js GRAFİK KURULUMU ---
+    const chartW = 320, chartH = 140;
+    const svgChart = d3.select("#chart-container").append("svg").attr("width", chartW).attr("height", chartH);
+    const xChart = d3.scaleLinear().domain([0, 60]).range([30, chartW-10]);
+    const yChart = d3.scaleLinear().domain([0, 200]).range([chartH-20, 10]);
+    
+    const xAxis = svgChart.append("g").attr("transform", `translate(0,${chartH-20})`).style("font-size", "8px").call(d3.axisBottom(xChart).ticks(5));
+    const yAxis = svgChart.append("g").attr("transform", "translate(30,0)").style("font-size", "8px").call(d3.axisLeft(yChart).ticks(4));
+    const linePath = svgChart.append("path").attr("fill", "none").attr("stroke", "#3498db").attr("stroke-width", 2);
+
+    function updateDashboard() {
         const rho = (state.lambda * state.interval) / state.capacity;
         document.getElementById("l-v").innerText = state.lambda;
         document.getElementById("i-v").innerText = state.interval;
@@ -91,266 +105,124 @@
         document.getElementById("q-val").innerText = state.queue;
         document.getElementById("rho-val").innerText = rho.toFixed(2);
 
-        const isFail = rho >= 1;
-        document.getElementById("rho-card").style.background = isFail ? "var(--danger)" : "var(--safe)";
-        const badge = document.getElementById("status-badge");
-        badge.innerText = isFail ? "⚠️ DARBOĞAZ (İSTİKRARSIZ)" : "✅ SİSTEM KARARLI";
-        badge.style.background = isFail ? "var(--danger)" : "var(--safe)";
+        const isUnstable = rho >= 1;
+        const tag = document.getElementById("status-tag");
+        tag.innerText = isUnstable ? "⚠️ DARBOĞAZ (KRİTİK)" : "✅ SİSTEM KARARLI";
+        tag.style.background = isUnstable ? "#e74c3c" : "#2ecc71";
+
+        // Grafik Güncelleme
+        if(state.time > 60) xChart.domain([state.time - 60, state.time]);
+        yChart.domain([0, Math.max(200, d3.max(state.history, d => d.q) * 1.1 || 0)]);
+        xAxis.call(d3.axisBottom(xChart).ticks(5));
+        yAxis.call(d3.axisLeft(yChart).ticks(4));
+        linePath.datum(state.history).attr("d", d3.line().x(d => xChart(d.t)).y(d => yChart(d.q)));
     }
 
-    document.getElementById("l-in").addEventListener("input", e => { state.lambda = +e.target.value; updateUI(); });
-    document.getElementById("i-in").addEventListener("input", e => { state.interval = +e.target.value; updateUI(); });
-    document.getElementById("c-in").addEventListener("input", e => { state.capacity = +e.target.value; updateUI(); });
-
-    // --- THREE.JS 3D MOTOR KURULUMU ---
-    const container = document.getElementById("canvas-container");
+    // --- THREE.JS 3D MOTORU ---
     const scene = new THREE.Scene();
-    // Modern ve temiz bir atmosfer
     scene.background = new THREE.Color(0xddebf7);
-    scene.fog = new THREE.Fog(0xddebf7, 100, 300); // Sonsuzluk hissi için sis
+    const camera = new THREE.OrthographicCamera(-70, 70, 40, -40, 1, 1000);
+    camera.position.set(50, 50, 50); camera.lookAt(0, 5, 0);
 
-    // İzometrik Kamera
-    const aspect = window.innerWidth / window.innerHeight;
-    const d = 60;
-    const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
-    camera.position.set(60, 80, 60);
-    camera.lookAt(0, 0, 0);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    container.appendChild(renderer.domElement);
+    document.getElementById("canvas-container").appendChild(renderer.domElement);
 
-    // Işıklandırma (Güneş Işığı ve Gölgeler)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-    dirLight.position.set(30, 80, 40);
-    dirLight.castShadow = true;
-    dirLight.shadow.camera.left = -100;
-    dirLight.shadow.camera.right = 100;
-    dirLight.shadow.camera.top = 100;
-    dirLight.shadow.camera.bottom = -100;
-    scene.add(dirLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+    sun.position.set(40, 60, 20); sun.castShadow = true;
+    scene.add(sun);
 
-    // --- 3D MODELLER ---
-    // 1. Sonsuz Yol
-    const roadGeo = new THREE.PlaneGeometry(800, 40);
-    const roadMat = new THREE.MeshStandardMaterial({ color: 0x34495e, roughness: 0.8 });
-    const road = new THREE.Mesh(roadGeo, roadMat);
-    road.rotation.x = -Math.PI / 2;
-    road.receiveShadow = true;
-    scene.add(road);
-
-    // Yol Çizgileri
-    const lineGeo = new THREE.PlaneGeometry(800, 1);
-    const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const centerLine = new THREE.Mesh(lineGeo, lineMat);
-    centerLine.rotation.x = -Math.PI / 2;
-    centerLine.position.y = 0.1;
-    scene.add(centerLine);
-
-    // 2. Durak Kaldırımı
-    const stopGeo = new THREE.BoxGeometry(200, 2, 30);
-    const stopMat = new THREE.MeshStandardMaterial({ color: 0x95a5a6, roughness: 0.9 });
-    const stopArea = new THREE.Mesh(stopGeo, stopMat);
-    stopArea.position.set(0, 1, -35); // Yoldan geride
-    stopArea.receiveShadow = true;
-    scene.add(stopArea);
-
-    // Durak İşareti / Çatısı
-    const shelterGeo = new THREE.BoxGeometry(20, 1, 10);
-    const shelterMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
-    const shelter = new THREE.Mesh(shelterGeo, shelterMat);
-    shelter.position.set(10, 15, -25);
-    shelter.castShadow = true;
-    scene.add(shelter);
+    // Çevre (Yol ve Kaldırım)
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(1000, 40), new THREE.MeshStandardMaterial({color: 0x333333}));
+    road.rotation.x = -Math.PI/2; road.receiveShadow = true; scene.add(road);
     
-    const poleGeo = new THREE.CylinderGeometry(0.5, 0.5, 14);
-    const pole1 = new THREE.Mesh(poleGeo, shelterMat);
-    pole1.position.set(2, 8, -28);
-    pole1.castShadow = true;
-    scene.add(pole1);
+    const curb = new THREE.Mesh(new THREE.BoxGeometry(200, 2, 25), new THREE.MeshStandardMaterial({color: 0x999999}));
+    curb.position.set(0, 1, -30); curb.receiveShadow = true; scene.add(curb);
 
-    // 3. Gerçekçi Otobüs Modeli
+    // Otobüs Grubu ve Gelişmiş Tekerlekler
     const busGroup = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(36, 12, 11), new THREE.MeshStandardMaterial({color: 0xf1c40f}));
+    body.position.y = 8; body.castShadow = true; busGroup.add(body);
     
-    // Gövde
-    const busBodyGeo = new THREE.BoxGeometry(40, 14, 12);
-    const busBodyMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.4 });
-    const busBody = new THREE.Mesh(busBodyGeo, busBodyMat);
-    busBody.position.y = 9;
-    busBody.castShadow = true;
-    busGroup.add(busBody);
-    
-    // Camlar (Siyah Şerit)
-    const windowGeo = new THREE.BoxGeometry(38, 5, 12.5);
-    const windowMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1 });
-    const busWindow = new THREE.Mesh(windowGeo, windowMat);
-    busWindow.position.y = 11;
-    busGroup.add(busWindow);
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(34, 5, 11.2), new THREE.MeshStandardMaterial({color: 0x222222}));
+    glass.position.y = 10; busGroup.add(glass);
 
-    // Tekerlekler
-    const wheelGeo = new THREE.CylinderGeometry(3, 3, 2, 16);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-    const wheelPositions = [
-        [-12, 3, 6.5], [12, 3, 6.5], [-12, 3, -6.5], [12, 3, -6.5]
-    ];
-    
-    wheelPositions.forEach(pos => {
-        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-        wheel.rotation.x = Math.PI / 2;
-        wheel.position.set(...pos);
-        wheel.castShadow = true;
-        busGroup.add(wheel);
-        wheels.push(wheel);
+    const wheelGeo = new THREE.CylinderGeometry(2.8, 2.8, 2, 16);
+    const wheelMat = new THREE.MeshStandardMaterial({color: 0x111111});
+    const wheelRefs = [];
+    [[-12, 2.8, 5.8], [12, 2.8, 5.8], [-12, 2.8, -5.8], [12, 2.8, -5.8]].forEach(p => {
+        const wGroup = new THREE.Group();
+        const w = new THREE.Mesh(wheelGeo, wheelMat);
+        w.rotation.z = Math.PI/2; w.castShadow = true;
+        wGroup.add(w); wGroup.position.set(...p);
+        busGroup.add(wGroup); wheelRefs.push(w);
     });
+    busGroup.position.set(-200, 0, 5); scene.add(busGroup);
 
-    busGroup.position.set(-300, 0, 5); // Kamera dışı (Sol)
-    scene.add(busGroup);
-
-    // --- KİNETİK VE MATEMATİKSEL FONKSİYONLAR ---
-    // Pürüzsüz ivmelenme ve yavaşlama için (Ease In-Out)
-    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-    function easeInCubic(t) { return t * t * t; }
-
-    // --- ÖĞRENCİ KUYRUĞU (2x2 DİZİLİM MANTIĞI) ---
-    // Önceden 400 adet öğrenci objesi oluşturulur (Performans için)
-    const maxStudents = 400;
+    // Öğrenciler (2x2 Düzen)
+    const students = [];
     const stuGeo = new THREE.CylinderGeometry(0.8, 0.8, 4, 8);
-    const stuMat = new THREE.MeshStandardMaterial({ color: 0x2980b9 });
-    
-    for(let i=0; i<maxStudents; i++) {
-        const student = new THREE.Mesh(stuGeo, stuMat);
-        student.castShadow = true;
-        student.visible = false; // Başlangıçta hepsi gizli
-        scene.add(student);
-        studentMeshes.push(student);
+    const stuMat = new THREE.MeshStandardMaterial({color: 0x3498db});
+    for(let i=0; i<300; i++){
+        const s = new THREE.Mesh(stuGeo, stuMat); s.castShadow = true; s.visible = false;
+        scene.add(s); students.push(s);
     }
 
-    function updateStudentPositions() {
-        for(let i = 0; i < maxStudents; i++) {
-            if(i < state.queue) {
-                studentMeshes[i].visible = true;
-                
-                // İkişerli Sıra Algoritması (Otobüsün geldiği negatif X yönüne doğru uzar)
-                let row = Math.floor(i / 2);
-                let col = i % 2;
-                
-                // Başlangıç noktası X=15. Her sıra 3 birim geriye (-X yönüne) gider.
-                let targetX = 15 - (row * 3); 
-                // Yola inmemeleri için kaldırımda Z=-25 ve Z=-30 koordinatlarında iki şerit
-                let targetZ = -25 - (col * 5); 
-                
-                // Yumuşak geçiş (Lerp) - Sıra ilerledikçe arkadakiler yavaşça öne yürür
-                studentMeshes[i].position.lerp(new THREE.Vector3(targetX, 2, targetZ), 0.1);
-            } else {
-                studentMeshes[i].visible = false;
-                // Gizlenenleri çok uzağa at ki lerp yaparken ekrandan uçmasınlar
-                studentMeshes[i].position.set(100, 2, -30); 
-            }
-        }
-    }
-
-    // --- SİMÜLASYON DÖNGÜSÜ (Hızlandırılmış) ---
-    // Her 500ms = 1 Simülasyon Dakikası (Çok daha akıcı)
-    setInterval(() => {
+    function updateSim() {
         state.time++;
-        
-        // Yeni öğrenciler varış hızı kadar sıraya girer
         state.queue += state.lambda;
-
-        // Otobüs sefer zamanı geldiyse ve otobüs şu an yolda değilse
-        if(state.time > 0 && state.time % state.interval === 0 && busState === "idle") {
-            busState = "arriving";
-            busTimer = 0;
-        }
-
-        updateUI();
-    }, 500);
-
-    // --- 3D ANİMASYON DÖNGÜSÜ (60 FPS) ---
-    let lastTime = performance.now();
+        state.history.push({t: state.time, q: state.queue});
+        if(state.time > 0 && state.time % state.interval === 0 && busState === "idle") busState = "arriving";
+        updateDashboard();
+    }
+    setInterval(updateSim, 1000);
 
     function animate() {
         requestAnimationFrame(animate);
         
-        let now = performance.now();
-        let dt = (now - lastTime) / 1000; // Delta time (saniye)
-        lastTime = now;
-
-        // Otobüs Durum Makinesi (State Machine)
-        if (busState === "arriving") {
-            busTimer += dt;
-            let progress = Math.min(busTimer / TIME_ARRIVE, 1);
-            
-            // -300'den 0'a yumuşak frenleyerek geliş
-            let startX = -300;
-            let endX = 0;
-            busGroup.position.x = startX + (endX - startX) * easeOutCubic(progress);
-            
-            // Tekerlekleri hıza orantılı döndür
-            let speed = (1 - progress) * 20 + 2; 
-            wheels.forEach(w => w.rotation.z -= speed * dt);
-
-            if (progress >= 1) {
+        // Otobüs Fiziği (İvmelenme/Fren)
+        if(busState === "arriving"){
+            busGroup.position.x += (0 - busGroup.position.x) * 0.05;
+            wheelRefs.forEach(w => w.rotation.x -= 0.15);
+            if(busGroup.position.x > -0.5) {
                 busState = "boarding";
-                busTimer = 0;
-                
-                // Yolcuları al (Kuyruktan düş)
-                let boarded = Math.min(state.queue, state.capacity);
-                state.queue -= boarded;
-                updateUI();
+                setTimeout(() => {
+                    state.queue = Math.max(0, state.queue - state.capacity);
+                    busState = "departing";
+                }, 1000);
             }
-        } 
-        else if (busState === "boarding") {
-            // Otobüs duruyor, tekerlekler dönmez.
-            busTimer += dt;
-            if (busTimer >= TIME_BOARD) {
-                busState = "departing";
-                busTimer = 0;
-            }
-        } 
-        else if (busState === "departing") {
-            busTimer += dt;
-            let progress = Math.min(busTimer / TIME_DEPART, 1);
-            
-            // 0'dan 300'e ivmelenerek gidiş
-            let startX = 0;
-            let endX = 300;
-            busGroup.position.x = startX + (endX - startX) * easeInCubic(progress);
-            
-            // Tekerlekleri ivmeye orantılı döndür
-            let speed = progress * 20 + 2;
-            wheels.forEach(w => w.rotation.z -= speed * dt);
-
-            if (progress >= 1) {
-                busState = "idle";
-                busGroup.position.x = -300; // Sonraki sefer için geri başa al
-            }
+        } else if(busState === "departing") {
+            busGroup.position.x += busTimer * 0.1; busTimer += 0.2;
+            wheelRefs.forEach(w => w.rotation.x -= busTimer * 0.05);
+            if(busGroup.position.x > 250) { busGroup.position.x = -250; busState = "idle"; busTimer = 0; }
         }
 
-        // Kuyruktaki öğrencilerin hareketini güncelle
-        updateStudentPositions();
+        // Öğrenci Pozisyonları (Yumuşak Sıra)
+        students.forEach((s, i) => {
+            if(i < state.queue) {
+                s.visible = true;
+                const row = Math.floor(i/2), col = i%2;
+                s.position.lerp(new THREE.Vector3(15 - (row * 2.5), 3, -25 - (col * 4)), 0.1);
+            } else s.visible = false;
+        });
 
         renderer.render(scene, camera);
     }
+    
+    // Slider Listeners
+    document.getElementById("l-in").oninput = e => state.lambda = +e.target.value;
+    document.getElementById("i-in").oninput = e => state.interval = +e.target.value;
+    document.getElementById("c-in").oninput = e => state.capacity = +e.target.value;
 
-    // Pencere boyutu değiştiğinde responsive uyum
     window.addEventListener('resize', () => {
-        const aspect = window.innerWidth / window.innerHeight;
-        camera.left = -d * aspect;
-        camera.right = d * aspect;
-        camera.top = d;
-        camera.bottom = -d;
-        camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.updateProjectionMatrix();
     });
 
-    // Başlat
-    updateUI();
     animate();
+    updateDashboard();
 </script>
 
 </body>

@@ -80,7 +80,7 @@
 <div id="chart-container"></div>
 
 <script>
-    // --- SIMÜLASYON VERİLERİ (Pending Mantığı Korundu) ---
+    // --- SIMÜLASYON VERİLERİ ---
     let state = { lambda: 18, interval: 3, capacity: 78, queue: 0, time: 0, history: [{t:0, q:0}] };
     let busState = "idle"; 
     let busTimer = 0;
@@ -179,15 +179,27 @@
 
     scene.add(shelterGroup);
 
-    // --- OTOBÜS GRUBU VE 130 LED TABELASI ---
+    // --- OTOBÜS GRUBU (EGO TASARIM GÜNCELLEMESİ) ---
     const busGroup = new THREE.Group();
-    // Otobüs Rengi 0x255669 olarak güncellendi
-    const body = new THREE.Mesh(new THREE.BoxGeometry(40, 14, 12), new THREE.MeshStandardMaterial({color: 0x255669, roughness: 0.4}));
-    body.position.y = 9; body.castShadow = true; busGroup.add(body);
     
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
-    glass.position.y = 11; busGroup.add(glass);
+    // EGO Mavisi Alt Gövde
+    const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(40, 5, 12), new THREE.MeshStandardMaterial({color: 0x1d4e89, roughness: 0.4}));
+    lowerBody.position.y = 4.5; 
+    lowerBody.castShadow = true; 
+    busGroup.add(lowerBody);
 
+    // Beyaz Üst Gövde
+    const upperBody = new THREE.Mesh(new THREE.BoxGeometry(40, 9, 12), new THREE.MeshStandardMaterial({color: 0xfdfdfd, roughness: 0.4}));
+    upperBody.position.y = 11.5; 
+    upperBody.castShadow = true; 
+    busGroup.add(upperBody);
+    
+    // Siyah Camlar
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
+    glass.position.y = 11; 
+    busGroup.add(glass);
+
+    // 130 LED TABELASI
     const ledCanvas = document.createElement('canvas');
     ledCanvas.width = 128; ledCanvas.height = 64;
     const ctxLed = ledCanvas.getContext('2d');
@@ -204,6 +216,7 @@
     routeSign.rotation.y = Math.PI / 2;
     busGroup.add(routeSign);
 
+    // Tekerlekler
     const wheelGeo = new THREE.CylinderGeometry(3, 3, 2.5, 16);
     wheelGeo.rotateX(Math.PI / 2); 
     const wheelMat = new THREE.MeshStandardMaterial({color: 0x222222});
@@ -243,7 +256,7 @@
         students.push(humanGroup);
     }
 
-    // --- KUSURSUZ ZAMANLAMA DÖNGÜSÜ (PENDING MANTIĞI) ---
+    // --- KUSURSUZ ZAMANLAMA DÖNGÜSÜ ---
     setInterval(() => {
         state.time++;
         state.queue += state.lambda; 

@@ -72,7 +72,7 @@
                 <span>Otobüs Kapasitesi</span>
                 <span class="slider-val"><span id="c-v">78</span> kişi</span>
             </div>
-            <input type="range" id="c-in" min="30" max="250" value="78">
+            <input type="range" id="c-in" min="30" max="200" value="78">
         </div>
     </div>
 
@@ -216,7 +216,7 @@
         const bus = stage.append("g").attr("transform", "translate(-150, 115)");
         
         // Otobüs Gövdesi
-        bus.append("rect").attr("width", 140).attr("height", 65).attr("rx", 8).attr("fill", "#ecc94b");
+        bus.append("rect").attr("width", 140).attr("height", 65).attr("rx", 8).attr("fill", "#245bbf");
         // Otobüs Camı
         bus.append("rect").attr("width", 110).attr("height", 25).attr("x", 20).attr("y", 10).attr("rx", 4).attr("fill", "#2d3748").attr("opacity", 0.6);
         // Tekerlekler

@@ -22,9 +22,9 @@
         h1 { font-size: 18px; margin: 0 0 18px 0; color: var(--text); border-bottom: 2px solid #edf2f7; padding-bottom: 12px; font-weight: 800;}
         
         .control-group { margin-bottom: 18px; }
-        label { display: block; font-size: 12px; font-weight: 700; color: #5a6a8a; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.5px; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #5a6a8a; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.5px; }
         input[type=range] { width: 100%; cursor: pointer; accent-color: var(--accent); }
-        .val-disp { float: right; color: var(--accent); font-weight: 800; font-size: 14px;}
+        .val-disp { float: right; color: var(--accent); font-weight: 800; font-size: 13px;}
 
         .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .kpi-box { background: white; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.03); }
@@ -52,15 +52,15 @@
     <h1>📊 EGO 130 Operasyonel İzleme</h1>
     
     <div class="control-group">
-        <label>Varış Hızı (λ) <span class="val-disp" id="l-v">18</span></label>
+        <label>Varış Hızı (1 Dakikada Gelen) <span class="val-disp"><span id="l-v">18</span> kişi</span></label>
         <input type="range" id="l-in" min="1" max="80" value="18">
     </div>
     <div class="control-group">
-        <label>Sefer Sıklığı <span class="val-disp" id="i-v">3</span></label>
+        <label>Sefer Sıklığı (Gelme Aralığı) <span class="val-disp"><span id="i-v">3</span> dk'da bir</span></label>
         <input type="range" id="i-in" min="1" max="50" value="3">
     </div>
     <div class="control-group">
-        <label>Otobüs Kapasitesi <span class="val-disp" id="c-v">78</span></label>
+        <label>Otobüs Kapasitesi <span class="val-disp"><span id="c-v">78</span> kişi</span></label>
         <input type="range" id="c-in" min="30" max="250" value="78">
     </div>
 
@@ -80,11 +80,11 @@
 <div id="chart-container"></div>
 
 <script>
-    // --- SIMÜLASYON VERİLERİ (Pending Mantığı Eklendi) ---
+    // --- SIMÜLASYON VERİLERİ (Pending Mantığı Korundu) ---
     let state = { lambda: 18, interval: 3, capacity: 78, queue: 0, time: 0, history: [{t:0, q:0}] };
     let busState = "idle"; 
     let busTimer = 0;
-    let pendingBuses = 0; // Matematiksel senkronizasyon için kuyrukta bekleyen sefer emri sayısı
+    let pendingBuses = 0;
 
     // --- D3.js GRAFİK (Sawtooth) ---
     const chartW = 340, chartH = 160;
@@ -181,7 +181,8 @@
 
     // --- OTOBÜS GRUBU VE 130 LED TABELASI ---
     const busGroup = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(40, 14, 12), new THREE.MeshStandardMaterial({color: 0xf1c40f, roughness: 0.4}));
+    // Otobüs Rengi 0x255669 olarak güncellendi
+    const body = new THREE.Mesh(new THREE.BoxGeometry(40, 14, 12), new THREE.MeshStandardMaterial({color: 0x255669, roughness: 0.4}));
     body.position.y = 9; body.castShadow = true; busGroup.add(body);
     
     const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
@@ -245,9 +246,8 @@
     // --- KUSURSUZ ZAMANLAMA DÖNGÜSÜ (PENDING MANTIĞI) ---
     setInterval(() => {
         state.time++;
-        state.queue += state.lambda; // Kuyruk matematiksel olarak her saniye kusursuz eklenir
+        state.queue += state.lambda; 
         
-        // Eğer sefer vakti geldiyse bunu sisteme emret (animasyonu bekleme)
         if(state.time > 0 && state.time % state.interval === 0) {
             pendingBuses++; 
         }
@@ -260,39 +260,35 @@
     function animate() {
         requestAnimationFrame(animate);
         
-        // Eğer otobüs boşta ve bekleyen bir sefer emri varsa, hemen yola çıkar
         if (busState === "idle" && pendingBuses > 0) {
             busState = "arriving";
-            pendingBuses--; // Emri işleme aldık
+            pendingBuses--; 
         }
         
         if(busState === "arriving"){
             let dist = 0 - busGroup.position.x;
-            let speed = dist * 0.08; // Otobüsün gelişi hafif hızlandırıldı
+            let speed = dist * 0.08; 
             if(speed < 0.3) speed = 0.3;
             
             if(busGroup.position.x >= -0.8) {
                 busGroup.position.x = 0;
                 busState = "boarding";
                 setTimeout(() => {
-                    // Yolcular alındığında matematiksel kuyruğu tam o an keskin şekilde düşür
                     state.queue = Math.max(0, state.queue - state.capacity);
-                    state.history.push({t: state.time, q: state.queue}); // Grafikte kusursuz Testere Dişi düşüşü
+                    state.history.push({t: state.time, q: state.queue}); 
                     updateDashboard();
                     
                     busState = "departing";
                     busTimer = 0;
-                }, 600); // Gerçekçi ama seri bekleme süresi (600ms)
+                }, 600); 
             } else {
                 busGroup.position.x += speed;
-                // DÜZELTME: Tekerlekler tekrar doğru eksende (Z ekseni) dönüyor
                 wheelRefs.forEach(w => w.rotation.z -= speed * 0.2); 
             }
         } else if(busState === "departing") {
-            busTimer += 0.05; // Daha seri kalkış ivmesi
+            busTimer += 0.05; 
             let speed = busTimer;
             busGroup.position.x += speed;
-            // DÜZELTME: Tekerlekler tekrar doğru eksende (Z ekseni) dönüyor
             wheelRefs.forEach(w => w.rotation.z -= speed * 0.2);
             
             if(busGroup.position.x > 350) { 
@@ -309,7 +305,7 @@
                 s.position.lerp(new THREE.Vector3(15 - (row * 3.2), 1, -29 - (col * 4.5)), 0.1);
             } else {
                 s.visible = false;
-                s.position.set(-150, 1, -29); // Öğrenciler otobüsün geldiği soldan sıraya ekleniyor
+                s.position.set(-150, 1, -29); 
             }
         });
 

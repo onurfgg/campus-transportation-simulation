@@ -117,7 +117,7 @@
 
     // --- THREE.JS KURULUMU ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xbedfff); // Biraz daha doygun gökyüzü
+    scene.background = new THREE.Color(0xbedfff); 
     scene.fog = new THREE.Fog(0xbedfff, 120, 350);
 
     // İzometrik Kamera
@@ -154,17 +154,14 @@
     // PROFESYONEL DURAK MİMARİSİ (Modern Kanatlı Tasarım)
     const shelterGroup = new THREE.Group();
     
-    // Arka Duvar (Koyu Metal ve Yarı Saydam Cam Karışımı)
     const backWall = new THREE.Mesh(new THREE.BoxGeometry(50, 15, 1), new THREE.MeshStandardMaterial({color: 0x34495e, transparent: true, opacity: 0.9}));
     backWall.position.set(0, 8.5, -38); backWall.castShadow = true; shelterGroup.add(backWall);
     
-    // Modern Cam Çatı (Yarı Saydam Mavi)
     const roofGeo = new THREE.BoxGeometry(55, 0.8, 18);
     const roofMat = new THREE.MeshStandardMaterial({color: 0x87CEEB, transparent: true, opacity: 0.5, roughness: 0.1});
     const shelterRoof = new THREE.Mesh(roofGeo, roofMat);
     shelterRoof.position.set(0, 16, -30); shelterRoof.castShadow = true; shelterGroup.add(shelterRoof);
     
-    // Ana Direk ve Çerçeve (Koyu Alüminyum)
     const frameMat = new THREE.MeshStandardMaterial({color: 0x2c3e50, metalness: 0.6, roughness: 0.2});
     const mainPole = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 16), frameMat);
     mainPole.position.set(24, 8, -25); mainPole.castShadow = true; shelterGroup.add(mainPole);
@@ -178,7 +175,7 @@
     
     const signBoard = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 0.5), new THREE.MeshStandardMaterial({color: 0xffffff}));
     signBoard.position.set(28, 16, -20);
-    const egoText = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({color: 0xe74c3c})); // Kırmızı EGO stili
+    const egoText = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({color: 0xe74c3c})); 
     egoText.position.set(0, 0, 0.3); signBoard.add(egoText);
     scene.add(signBoard);
 
@@ -210,22 +207,19 @@
     const students = [];
     const maxStudents = 400;
 
-    // Her öğrenci için rastgele mavimsi gömlek rengi üreten fonksiyon
+    // HATA BURADAYDI: colorss.length ifadesi colors.length olarak düzeltildi.
     function getRandomShirtColor() {
         const colors = [0x2980b9, 0x3498db, 0x1e88e5, 0x1976d2, 0x1565c0];
-        return colors[Math.floor(Math.random() * colorss.length)];
+        return colors[Math.floor(Math.random() * colors.length)];
     }
 
     for(let i=0; i<maxStudents; i++){
-        // Öğrenci Grubu (Gövde + Baş)
         const humanGroup = new THREE.Group();
         
-        // Gövde (Koni)
         const torso = new THREE.Mesh(new THREE.ConeGeometry(1.1, 4.5, 8), new THREE.MeshStandardMaterial({color: getRandomShirtColor()}));
         torso.position.y = 2.25; torso.castShadow = true; humanGroup.add(torso);
         
-        // Baş (Küre)
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), new THREE.MeshStandardMaterial({color: 0xe0ac69})); // Ten rengi
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), new THREE.MeshStandardMaterial({color: 0xe0ac69})); 
         head.position.y = 5; head.castShadow = true; humanGroup.add(head);
         
         humanGroup.visible = false;
@@ -249,7 +243,6 @@
     function animate() {
         requestAnimationFrame(animate);
         
-        // Otobüs Fiziği (Yumuşak Kinematik)
         if(busState === "arriving"){
             let dist = 0 - busGroup.position.x;
             let speed = dist * 0.05;
@@ -262,7 +255,7 @@
                     state.queue = Math.max(0, state.queue - state.capacity);
                     busState = "departing";
                     busTimer = 0;
-                }, 1000); // 1 saniye bekleme
+                }, 1000); 
             } else {
                 busGroup.position.x += speed;
                 wheelRefs.forEach(w => w.rotation.z -= speed * 0.2);
@@ -280,16 +273,13 @@
             }
         }
 
-        // İnsan Figürlerinin Pozisyonları (Yumuşak 2x2 Sıra Kayması)
         students.forEach((s, i) => {
             if(i < state.queue) {
                 s.visible = true;
                 const row = Math.floor(i/2), col = i%2;
-                // Öğrenciler tam durağın çatısının ve arka duvarının altına dizilir
                 s.position.lerp(new THREE.Vector3(15 - (row * 3.2), 1, -29 - (col * 4.5)), 0.1);
             } else {
                 s.visible = false;
-                // Gizlenenleri uzağa at ki lerp yaparken ekrana uçmasınlar
                 s.position.set(100, 1, -29);
             }
         });
@@ -297,7 +287,6 @@
         renderer.render(scene, camera);
     }
     
-    // UI Dinleyicileri
     document.getElementById("l-in").oninput = e => { state.lambda = +e.target.value; updateDashboard(); };
     document.getElementById("i-in").oninput = e => { state.interval = +e.target.value; updateDashboard(); };
     document.getElementById("c-in").oninput = e => { state.capacity = +e.target.value; updateDashboard(); };

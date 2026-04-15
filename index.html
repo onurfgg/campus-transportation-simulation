@@ -6,17 +6,30 @@
     <title>EGO 130 | Profesyonel 3D Dijital İkiz</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --accent: #3498db; --bg-glass: rgba(255, 255, 255, 0.9); --text: #2c3e50; }
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: #bedfff; }
+        :root { --accent: #3498db; --bg-glass: rgba(255, 255, 255, 0.85); --text: #2c3e50; }
+        /* Daha kurumsal, modern ve koyu bir arka plan */
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: #1e293b; }
         
         #canvas-container { position: absolute; width: 100vw; height: 100vh; z-index: 0; }
 
+        /* LinkedIn Butonu Stili */
+        .linkedin-btn {
+            position: absolute; top: 20px; left: 20px; z-index: 15;
+            background: #0077b5; color: white; text-decoration: none;
+            padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px;
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.3s;
+        }
+        .linkedin-btn:hover { background: #005885; transform: translateY(-2px); }
+
+        /* Sidebar aşağı kaydırıldı (LinkedIn butonuna yer açmak için) */
         .sidebar {
-            position: absolute; top: 20px; left: 20px; width: 310px; z-index: 10;
+            position: absolute; top: 70px; left: 20px; width: 310px; z-index: 10;
             background: var(--bg-glass); backdrop-filter: blur(15px);
-            padding: 25px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            padding: 25px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
         h1 { font-size: 18px; margin: 0 0 18px 0; color: var(--text); border-bottom: 2px solid #edf2f7; padding-bottom: 12px; font-weight: 800;}
@@ -34,8 +47,8 @@
         #chart-container {
             position: absolute; bottom: 20px; left: 20px; width: 360px; height: 180px;
             background: var(--bg-glass); backdrop-filter: blur(12px);
-            border-radius: 15px; padding: 15px; z-index: 10; border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            border-radius: 15px; padding: 15px; z-index: 10; border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
         #status-tag { 
@@ -48,15 +61,19 @@
 
 <div id="canvas-container"></div>
 
+<a href="https://linkedin.com/in/onurfurkan" target="_blank" class="linkedin-btn">
+    <i class="fab fa-linkedin"></i> Onur Furkan
+</a>
+
 <div class="sidebar">
     <h1>📊 EGO 130 Operasyonel İzleme</h1>
     
     <div class="control-group">
-        <label>Yoğunluk (1 Dakikada Gelen Öğrenci Sayısı) <span class="val-disp"><span id="l-v">18</span> kişi</span></label>
+        <label>Yoğunluk (1 Dk'da Gelen) <span class="val-disp"><span id="l-v">18</span> kişi</span></label>
         <input type="range" id="l-in" min="1" max="80" value="18">
     </div>
     <div class="control-group">
-        <label>Sefer Sıklığı (Gelme Aralığı) <span class="val-disp"><span id="i-v">3</span> dk'da bir</span></label>
+        <label>Sefer Sıklığı (Aralık) <span class="val-disp"><span id="i-v">3</span> dk</span></label>
         <input type="range" id="i-in" min="1" max="50" value="3">
     </div>
     <div class="control-group">
@@ -118,8 +135,9 @@
 
     // --- THREE.JS KURULUMU ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xbedfff); 
-    scene.fog = new THREE.Fog(0xbedfff, 120, 350);
+    // Modern Kurumsal Arka Plan
+    scene.background = new THREE.Color(0x1e293b); 
+    scene.fog = new THREE.Fog(0x1e293b, 120, 350);
 
     const aspect = window.innerWidth / window.innerHeight;
     const d = 75;
@@ -132,36 +150,35 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.getElementById("canvas-container").appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    // Işıklandırma biraz kısıldı (Gece/Akşamüstü havası)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.7);
     sun.position.set(40, 90, 50); sun.castShadow = true;
     sun.shadow.camera.left = -100; sun.shadow.camera.right = 100;
     sun.shadow.camera.top = 100; sun.shadow.camera.bottom = -100;
     scene.add(sun);
 
     // --- 3D MODELLER ---
-    const road = new THREE.Mesh(new THREE.PlaneGeometry(1000, 40), new THREE.MeshStandardMaterial({color: 0x444444}));
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(1000, 40), new THREE.MeshStandardMaterial({color: 0x2d3748}));
     road.rotation.x = -Math.PI/2; road.receiveShadow = true; scene.add(road);
     
-    const centerLine = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1), new THREE.MeshBasicMaterial({color: 0xffffff}));
+    const centerLine = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1), new THREE.MeshBasicMaterial({color: 0xcbd5e1}));
     centerLine.rotation.x = -Math.PI/2; centerLine.position.y = 0.1; scene.add(centerLine);
 
-    // Sonsuz Kaldırım
-    const curb = new THREE.Mesh(new THREE.BoxGeometry(1000, 2, 35), new THREE.MeshStandardMaterial({color: 0xa0aab5}));
+    const curb = new THREE.Mesh(new THREE.BoxGeometry(1000, 2, 35), new THREE.MeshStandardMaterial({color: 0x64748b}));
     curb.position.set(0, 1, -38); curb.receiveShadow = true; scene.add(curb);
 
-    // PROFESYONEL DURAK MİMARİSİ
+    // PROFESYONEL DURAK
     const shelterGroup = new THREE.Group();
-    
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(50, 15, 1), new THREE.MeshStandardMaterial({color: 0x34495e, transparent: true, opacity: 0.9}));
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(50, 15, 1), new THREE.MeshStandardMaterial({color: 0x0f172a, transparent: true, opacity: 0.85}));
     backWall.position.set(0, 8.5, -38); backWall.castShadow = true; shelterGroup.add(backWall);
     
     const roofGeo = new THREE.BoxGeometry(55, 0.8, 18);
-    const roofMat = new THREE.MeshStandardMaterial({color: 0x87CEEB, transparent: true, opacity: 0.5, roughness: 0.1});
+    const roofMat = new THREE.MeshStandardMaterial({color: 0x94a3b8, transparent: true, opacity: 0.4, roughness: 0.1});
     const shelterRoof = new THREE.Mesh(roofGeo, roofMat);
     shelterRoof.position.set(0, 16, -30); shelterRoof.castShadow = true; shelterGroup.add(shelterRoof);
     
-    const frameMat = new THREE.MeshStandardMaterial({color: 0x2c3e50, metalness: 0.6, roughness: 0.2});
+    const frameMat = new THREE.MeshStandardMaterial({color: 0x1e293b, metalness: 0.7, roughness: 0.3});
     const mainPole = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 16), frameMat);
     mainPole.position.set(24, 8, -25); mainPole.castShadow = true; shelterGroup.add(mainPole);
     
@@ -176,30 +193,19 @@
     const egoText = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({color: 0xe74c3c})); 
     egoText.position.set(0, 0, 0.3); signBoard.add(egoText);
     scene.add(signBoard);
-
     scene.add(shelterGroup);
 
-    // --- OTOBÜS GRUBU (EGO TASARIM GÜNCELLEMESİ) ---
+    // --- OTOBÜS GRUBU ---
     const busGroup = new THREE.Group();
-    
-    // EGO Mavisi Alt Gövde
-    const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(40, 5, 12), new THREE.MeshStandardMaterial({color: 0x1d4e89, roughness: 0.4}));
-    lowerBody.position.y = 4.5; 
-    lowerBody.castShadow = true; 
-    busGroup.add(lowerBody);
+    const lowerBody = new THREE.Mesh(new THREE.BoxGeometry(40, 5, 12), new THREE.MeshStandardMaterial({color: 0x255669, roughness: 0.4}));
+    lowerBody.position.y = 4.5; lowerBody.castShadow = true; busGroup.add(lowerBody);
 
-    // Beyaz Üst Gövde
     const upperBody = new THREE.Mesh(new THREE.BoxGeometry(40, 9, 12), new THREE.MeshStandardMaterial({color: 0xfdfdfd, roughness: 0.4}));
-    upperBody.position.y = 11.5; 
-    upperBody.castShadow = true; 
-    busGroup.add(upperBody);
+    upperBody.position.y = 11.5; upperBody.castShadow = true; busGroup.add(upperBody);
     
-    // Siyah Camlar
     const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
-    glass.position.y = 11; 
-    busGroup.add(glass);
+    glass.position.y = 11; busGroup.add(glass);
 
-    // 130 LED TABELASI
     const ledCanvas = document.createElement('canvas');
     ledCanvas.width = 128; ledCanvas.height = 64;
     const ctxLed = ledCanvas.getContext('2d');
@@ -212,11 +218,9 @@
     const ledTexture = new THREE.CanvasTexture(ledCanvas);
     const ledMat = new THREE.MeshBasicMaterial({ map: ledTexture });
     const routeSign = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), ledMat);
-    routeSign.position.set(20.05, 14.5, 0); 
-    routeSign.rotation.y = Math.PI / 2;
+    routeSign.position.set(20.05, 14.5, 0); routeSign.rotation.y = Math.PI / 2;
     busGroup.add(routeSign);
 
-    // Tekerlekler
     const wheelGeo = new THREE.CylinderGeometry(3, 3, 2.5, 16);
     wheelGeo.rotateX(Math.PI / 2); 
     const wheelMat = new THREE.MeshStandardMaterial({color: 0x222222});
@@ -230,7 +234,7 @@
     
     busGroup.position.set(-350, 0, 5); scene.add(busGroup);
 
-    // --- İNSAN FİGÜRLERİ VE ÇEŞİTLİ RENKLER ---
+    // --- İNSAN FİGÜRLERİ ---
     const students = [];
     const maxStudents = 400;
 
@@ -244,7 +248,6 @@
 
     for(let i=0; i<maxStudents; i++){
         const humanGroup = new THREE.Group();
-        
         const torso = new THREE.Mesh(new THREE.ConeGeometry(1.1, 4.5, 8), new THREE.MeshStandardMaterial({color: getRandomShirtColor()}));
         torso.position.y = 2.25; torso.castShadow = true; humanGroup.add(torso);
         
@@ -256,7 +259,7 @@
         students.push(humanGroup);
     }
 
-    // --- KUSURSUZ ZAMANLAMA DÖNGÜSÜ ---
+    // --- SİMÜLASYON DÖNGÜSÜ ---
     setInterval(() => {
         state.time++;
         state.queue += state.lambda; 
@@ -269,7 +272,7 @@
         updateDashboard();
     }, 1000);
 
-    // --- 3D ANİMASYON VE FİZİK DÖNGÜSÜ ---
+    // --- 3D ANİMASYON ---
     function animate() {
         requestAnimationFrame(animate);
         
@@ -325,8 +328,15 @@
         renderer.render(scene, camera);
     }
     
+    // YENİ EKLENTİ: Slider değiştiğinde bekleyen otobüsleri ve zamanı SIFIRLA
+    document.getElementById("i-in").oninput = e => { 
+        state.interval = +e.target.value; 
+        pendingBuses = 0; // Eski emirleri iptal et
+        state.time = 0; // Sayacı sıfırla ki hemen yeni kurala geçsin
+        updateDashboard(); 
+    };
+
     document.getElementById("l-in").oninput = e => { state.lambda = +e.target.value; updateDashboard(); };
-    document.getElementById("i-in").oninput = e => { state.interval = +e.target.value; updateDashboard(); };
     document.getElementById("c-in").oninput = e => { state.capacity = +e.target.value; updateDashboard(); };
 
     window.addEventListener('resize', () => {

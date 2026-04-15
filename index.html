@@ -62,14 +62,14 @@
             font-size: 12px; font-weight: bold; color: white; width: 100%; text-align: center; box-sizing: border-box; transition: 0.3s;
         }
 
-        /* --- YENİ: MOBİL UYUMLULUK (RESPONSIVE) CSS KURALLARI --- */
+        /* --- MOBİL UYUMLULUK (RESPONSIVE) KODLARI --- */
         @media screen and (max-width: 768px) {
             .social-container {
                 top: 10px; left: 10px; right: 10px; width: calc(100vw - 20px);
                 justify-content: space-between; gap: 8px; box-sizing: border-box;
             }
             .social-btn {
-                font-size: 11px; padding: 8px 5px; flex: 1; justify-content: center;
+                font-size: 11px; padding: 8px 5px; flex: 1; justify-content: center; text-align: center;
             }
             .sidebar {
                 top: 60px; left: 10px; width: calc(100vw - 20px); box-sizing: border-box;
@@ -83,13 +83,11 @@
                 left: 10px; bottom: 10px; width: calc(100vw - 20px); box-sizing: border-box;
                 padding: 10px; display: flex; justify-content: center; align-items: center;
             }
-            /* SVG grafiğinin ebeveyn div'e sığacak şekilde küçülmesi için */
             #chart-container svg {
                 max-width: 100%; height: auto;
             }
         }
 
-        /* Yüksekliği kısa olan telefon ekranları için panelleri hafifçe ölçeklendir (üst üste binmemesi için) */
         @media screen and (max-height: 700px) and (max-width: 768px) {
             .sidebar { transform: scale(0.9); transform-origin: top center; }
             #chart-container { transform: scale(0.9); transform-origin: bottom center; }
@@ -147,22 +145,20 @@
     let busTimer = 0;
     let pendingBuses = 0;
 
-    // --- D3.js GRAFİK (Sawtooth Düzeltmesi) ---
+    // --- D3.js GRAFİK (Mobilde esnemesi için viewBox eklendi) ---
     const chartW = 340, chartH = 160;
     const svgChart = d3.select("#chart-container").append("svg")
         .attr("width", chartW)
         .attr("height", chartH)
-        // Mobil ölçeklendirme için viewBox eklendi
-        .attr("viewBox", `0 0 ${chartW} ${chartH}`) 
+        .attr("viewBox", `0 0 ${chartW} ${chartH}`)
         .attr("preserveAspectRatio", "xMidYMid meet");
-
+        
     const xChart = d3.scaleLinear().domain([0, 60]).range([35, chartW-10]);
     const yChart = d3.scaleLinear().domain([0, 100]).range([chartH-25, 10]); 
     
     const xAxis = svgChart.append("g").attr("transform", `translate(0,${chartH-25})`).style("font-size", "10px").call(d3.axisBottom(xChart).ticks(6));
     const yAxis = svgChart.append("g").attr("transform", "translate(35,0)").style("font-size", "10px").call(d3.axisLeft(yChart).ticks(4));
     
-    // Çizgi taşmasını engellemek için clipping (kırpma) maskesi
     svgChart.append("defs").append("clipPath").attr("id", "clip").append("rect")
         .attr("x", 35).attr("y", 10).attr("width", chartW-45).attr("height", chartH-35);
     
@@ -220,7 +216,6 @@
     scene.add(sun);
 
     // --- 3D ÇEVRE VE YOL MODELLERİ ---
-    
     const road = new THREE.Mesh(new THREE.PlaneGeometry(1000, 40), new THREE.MeshStandardMaterial({color: 0x4a5568}));
     road.rotation.x = -Math.PI/2; road.receiveShadow = true; scene.add(road);
     
@@ -244,7 +239,6 @@
     frontGrass.receiveShadow = true;
     scene.add(frontGrass);
 
-    // Ağaçların yerini sabitleyen Seeded Random fonksiyonu
     let seed = 42;
     function seededRandom() {
         let x = Math.sin(seed++) * 10000;
@@ -317,17 +311,14 @@
     const upperBody = new THREE.Mesh(new THREE.BoxGeometry(40, 9, 12), new THREE.MeshStandardMaterial({color: 0xfdfdfd, roughness: 0.4}));
     upperBody.position.y = 11.5; upperBody.castShadow = true; busGroup.add(upperBody);
     
-    // Yan Camlar
     const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
     glass.position.y = 11; busGroup.add(glass);
 
-    // Ön Cam
     const frontGlass = new THREE.Mesh(new THREE.PlaneGeometry(11.5, 8.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
     frontGlass.position.set(20.05, 11.5, 0); 
     frontGlass.rotation.y = Math.PI / 2; 
     busGroup.add(frontGlass);
 
-    // LED TABELA
     const ledCanvas = document.createElement('canvas');
     ledCanvas.width = 128; ledCanvas.height = 64;
     const ctxLed = ledCanvas.getContext('2d');
@@ -344,7 +335,6 @@
     routeSign.rotation.y = Math.PI / 2;
     busGroup.add(routeSign);
 
-    // Tekerlekler
     const wheelGeo = new THREE.CylinderGeometry(3, 3, 2.5, 16);
     wheelGeo.rotateX(Math.PI / 2); 
     const wheelMat = new THREE.MeshStandardMaterial({color: 0x222222});

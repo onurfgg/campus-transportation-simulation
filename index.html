@@ -69,10 +69,10 @@
 
 <div class="social-container">
     <a href="https://linkedin.com/in/onurfurkan" target="_blank" class="social-btn btn-linkedin">
-        <i class="fab fa-linkedin"></i> Onur Furkan
+        <i class="fab fa-linkedin"></i> Onur Furkan Gök
     </a>
     <a href="https://github.com/onurfgg" target="_blank" class="social-btn btn-github">
-        <i class="fab fa-github"></i> onurfgg
+        <i class="fab fa-github"></i> Onur Furkan Gök
     </a>
 </div>
 
@@ -262,7 +262,7 @@
     const signPole = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 18), frameMat);
     signPole.position.set(28, 9, -20); scene.add(signPole);
     
-    const signBoard = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 0.5), new THREE.MeshStandardMaterial({color: 0xffffff}));
+    const signBoard = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 0.5), new MeshStandardMaterial({color: 0xffffff}));
     signBoard.position.set(28, 16, -20);
     const egoText = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({color: 0xe74c3c})); 
     egoText.position.set(0, 0, 0.3); signBoard.add(egoText);
@@ -282,26 +282,26 @@
     const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
     glass.position.y = 11; busGroup.add(glass);
 
-    // DÜZELTİLMİŞ ÖN CAM (Yamulma giderildi, düz ve milimetrik oturan jilet gibi tasarım)
+    // Ön Cam
     const frontGlass = new THREE.Mesh(new THREE.PlaneGeometry(11.5, 8.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
-    frontGlass.position.set(20.05, 11.5, 0); // Üst gövde ile hizalandı
-    frontGlass.rotation.y = Math.PI / 2; // Sadece dışarı bakması için döndürüldü
+    frontGlass.position.set(20.05, 11.5, 0); 
+    frontGlass.rotation.y = Math.PI / 2; 
     busGroup.add(frontGlass);
 
-    // LED TABELA (Ön camın üst kısmına tam olarak oturtuldu)
+    // LED TABELA (Büyütüldü ve hizalandı)
     const ledCanvas = document.createElement('canvas');
     ledCanvas.width = 128; ledCanvas.height = 64;
     const ctxLed = ledCanvas.getContext('2d');
     ctxLed.fillStyle = '#111111'; ctxLed.fillRect(0,0,128,64);
     ctxLed.fillStyle = '#ff9900'; 
-    ctxLed.font = 'bold 38px "Segoe UI", sans-serif'; 
+    ctxLed.font = 'bold 46px "Segoe UI", sans-serif';  // Font boyutu büyütüldü
     ctxLed.textAlign = 'center'; ctxLed.textBaseline = 'middle';
     ctxLed.fillText('130', 64, 34);
     
     const ledTexture = new THREE.CanvasTexture(ledCanvas);
     const ledMat = new THREE.MeshBasicMaterial({ map: ledTexture });
-    const routeSign = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), ledMat);
-    routeSign.position.set(20.06, 14, 0); // Camın hemen üst kısmında, hafifçe önde
+    const routeSign = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 3.5), ledMat); // Tabela boyutu orantılı büyütüldü
+    routeSign.position.set(20.06, 14.2, 0); // Camın üst kısmına kusursuz oturtuldu
     routeSign.rotation.y = Math.PI / 2;
     busGroup.add(routeSign);
 

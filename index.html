@@ -147,11 +147,11 @@
     const centerLine = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1), new THREE.MeshBasicMaterial({color: 0xffffff}));
     centerLine.rotation.x = -Math.PI/2; centerLine.position.y = 0.1; scene.add(centerLine);
 
-    // Kaldırım
-    const curb = new THREE.Mesh(new THREE.BoxGeometry(250, 2, 35), new THREE.MeshStandardMaterial({color: 0xa0aab5}));
+    // DÜZELTME 1: Sonsuz Kaldırım (Genişlik 250'den 1000'e çıkarıldı)
+    const curb = new THREE.Mesh(new THREE.BoxGeometry(1000, 2, 35), new THREE.MeshStandardMaterial({color: 0xa0aab5}));
     curb.position.set(0, 1, -38); curb.receiveShadow = true; scene.add(curb);
 
-    // PROFESYONEL DURAK MİMARİSİ (Modern Kanatlı Tasarım - V9'dan korundu)
+    // PROFESYONEL DURAK MİMARİSİ
     const shelterGroup = new THREE.Group();
     
     const backWall = new THREE.Mesh(new THREE.BoxGeometry(50, 15, 1), new THREE.MeshStandardMaterial({color: 0x34495e, transparent: true, opacity: 0.9}));
@@ -181,7 +181,7 @@
 
     scene.add(shelterGroup);
 
-    // --- OTOBÜS GRUBU ---
+    // --- OTOBÜS GRUBU VE 130 LED TABELASI ---
     const busGroup = new THREE.Group();
     const body = new THREE.Mesh(new THREE.BoxGeometry(40, 14, 12), new THREE.MeshStandardMaterial({color: 0xf1c40f, roughness: 0.4}));
     body.position.y = 9; body.castShadow = true; busGroup.add(body);
@@ -189,29 +189,24 @@
     const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
     glass.position.y = 11; busGroup.add(glass);
 
-    // 130 LED ROTA TABELASI (Yeni Eklenti)
     const ledCanvas = document.createElement('canvas');
     ledCanvas.width = 128; ledCanvas.height = 64;
     const ctxLed = ledCanvas.getContext('2d');
-    ctxLed.fillStyle = '#111111'; ctxLed.fillRect(0,0,128,64); // Siyah çerçeve
-    ctxLed.fillStyle = '#ff9900'; // Turuncu LED yazısı
+    ctxLed.fillStyle = '#111111'; ctxLed.fillRect(0,0,128,64);
+    ctxLed.fillStyle = '#ff9900'; 
     ctxLed.font = 'bold 38px "Segoe UI", sans-serif'; 
     ctxLed.textAlign = 'center'; ctxLed.textBaseline = 'middle';
     ctxLed.fillText('130', 64, 34);
     
     const ledTexture = new THREE.CanvasTexture(ledCanvas);
     const ledMat = new THREE.MeshBasicMaterial({ map: ledTexture });
-    const ledGeo = new THREE.PlaneGeometry(8, 4);
-    const routeSign = new THREE.Mesh(ledGeo, ledMat);
-    
-    // Otobüsün ön yüzünün (X=20) hafif üstüne yerleştirildi
+    const routeSign = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), ledMat);
     routeSign.position.set(20.05, 14.5, 0); 
     routeSign.rotation.y = Math.PI / 2;
     busGroup.add(routeSign);
 
-    // Tekerlekler (Doğru Fizik)
     const wheelGeo = new THREE.CylinderGeometry(3, 3, 2.5, 16);
-    wheelGeo.rotateX(Math.PI / 2); // Z eksenine bakış
+    wheelGeo.rotateX(Math.PI / 2); 
     const wheelMat = new THREE.MeshStandardMaterial({color: 0x222222});
     const wheelRefs = [];
     
@@ -223,21 +218,14 @@
     
     busGroup.position.set(-300, 0, 5); scene.add(busGroup);
 
-    // --- İNSAN FİGÜRLERİ VE ÇEŞİTLİ RENKLER (Yeni Eklenti) ---
+    // --- İNSAN FİGÜRLERİ VE ÇEŞİTLİ RENKLER ---
     const students = [];
     const maxStudents = 400;
 
-    // Geniş ve çeşitli renk paleti
     function getRandomShirtColor() {
         const colors = [
-            0xe74c3c, // Kırmızı
-            0x3498db, // Mavi
-            0x2ecc71, // Yeşil
-            0xf1c40f, // Sarı
-            0x9b59b6, // Mor
-            0xe67e22, // Turuncu
-            0x34495e, // Lacivert
-            0x95a5a6  // Gri
+            0xe74c3c, 0x3498db, 0x2ecc71, 0xf1c40f, 
+            0x9b59b6, 0xe67e22, 0x34495e, 0x95a5a6
         ];
         return colors[Math.floor(Math.random() * colors.length)];
     }
@@ -245,11 +233,9 @@
     for(let i=0; i<maxStudents; i++){
         const humanGroup = new THREE.Group();
         
-        // Rastgele gömlek rengi
         const torso = new THREE.Mesh(new THREE.ConeGeometry(1.1, 4.5, 8), new THREE.MeshStandardMaterial({color: getRandomShirtColor()}));
         torso.position.y = 2.25; torso.castShadow = true; humanGroup.add(torso);
         
-        // Baş
         const head = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 8), new THREE.MeshStandardMaterial({color: 0xe0ac69})); 
         head.position.y = 5; head.castShadow = true; humanGroup.add(head);
         
@@ -311,7 +297,8 @@
                 s.position.lerp(new THREE.Vector3(15 - (row * 3.2), 1, -29 - (col * 4.5)), 0.1);
             } else {
                 s.visible = false;
-                s.position.set(100, 1, -29);
+                // DÜZELTME 2: Öğrenciler artık sağdan (+100) değil, otobüsün geldiği soldan (-150) sıraya giriyor.
+                s.position.set(-150, 1, -29);
             }
         });
 

@@ -100,7 +100,7 @@
     let busTimer = 0;
     let pendingBuses = 0;
 
-    // --- D3.js GRAFİK (Kusursuz Sawtooth) ---
+    // --- D3.js GRAFİK (Sawtooth Düzeltmesi) ---
     const chartW = 340, chartH = 160;
     const svgChart = d3.select("#chart-container").append("svg").attr("width", chartW).attr("height", chartH);
     const xChart = d3.scaleLinear().domain([0, 60]).range([35, chartW-10]);
@@ -129,7 +129,6 @@
         tag.innerText = isUnstable ? "⚠️ DARBOĞAZ (SİSTEM İSTİKRARSIZ)" : "✅ SİSTEM KARARLI";
         tag.style.background = isUnstable ? "#e74c3c" : "#2ecc71";
 
-        // YENİ: Grafik hatasını (sola çizme/taşma) engelleyen akıllı filtreleme
         const startTime = Math.max(0, state.time - 60);
         const visibleData = state.history.filter(d => d.t >= startTime);
         
@@ -141,7 +140,6 @@
         
         xAxis.call(d3.axisBottom(xChart).ticks(6));
         yAxis.call(d3.axisLeft(yChart).ticks(4));
-        // Yalnızca ekranda olması gereken (son 60 saniye) verileri çizdiriyoruz
         linePath.datum(visibleData).attr("d", d3.line().x(d => xChart(d.t)).y(d => yChart(d.q)));
     }
 
@@ -193,13 +191,19 @@
     frontGrass.receiveShadow = true;
     scene.add(frontGrass);
 
-    // YENİ: Görüşü Kapatmayan Mükemmel Ağaç Dizilimi
+    // YENİ: Ağaçların yerini sabitleyen Seeded Random fonksiyonu
+    let seed = 42;
+    function seededRandom() {
+        let x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
+
     const treeMat = new THREE.MeshStandardMaterial({color: 0x27ae60, roughness: 0.8});
     const trunkMat = new THREE.MeshStandardMaterial({color: 0x8b4513});
     
     function createTree(x, z) {
         const treeGroup = new THREE.Group();
-        const scale = 0.7 + Math.random() * 0.7; 
+        const scale = 0.7 + seededRandom() * 0.7; // Sabit rastgelelik kullanıldı
         
         const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 6), trunkMat);
         trunk.position.y = 3; trunk.castShadow = true;
@@ -214,16 +218,14 @@
         scene.add(treeGroup);
     }
 
-    // Durağın Arkasındaki Yoğun Orman (Kamerayı Kapatmaz)
-    for (let i = 0; i < 60; i++) { // Sayı artırıldı
-        createTree(-400 + Math.random() * 800, -60 - Math.random() * 100);
+    // Ağaç dizilimlerinde seededRandom kullanıldığı için sayfa yenilense de ağaçlar aynı kalır
+    for (let i = 0; i < 60; i++) { 
+        createTree(-400 + seededRandom() * 800, -60 - seededRandom() * 100);
     }
 
-    // Ön Plandaki Ağaçlar (Kameranın önüne düşecek doğru Z koordinatlarına çekildi!)
-    for (let i = 0; i < 50; i++) { // Sayı artırıldı
-        let x = Math.random() > 0.5 ? 110 + Math.random() * 300 : -110 - Math.random() * 300;
-        // Kamera Z=60'ta. Ağaçları kameranın tam arkasına değil, görüş alanındaki çimlere diziyoruz.
-        createTree(x, 25 + Math.random() * 30);
+    for (let i = 0; i < 50; i++) { 
+        let x = seededRandom() > 0.5 ? 110 + seededRandom() * 300 : -110 - seededRandom() * 300;
+        createTree(x, 25 + seededRandom() * 30);
     }
 
     // PROFESYONEL DURAK MİMARİSİ
@@ -298,6 +300,7 @@
     const students = [];
     const maxStudents = 400;
 
+    // Kıyafet renkleri gerçek rastgele (Sayfa yenilendiğinde değişebilir, bu doğaldır)
     function getRandomShirtColor() {
         const colors = [
             0xe74c3c, 0x3498db, 0x2ecc71, 0xf1c40f, 
@@ -330,7 +333,6 @@
         
         state.history.push({t: state.time, q: state.queue});
         
-        // YENİ: Tarayıcı belleğini şişirmemek için eski verileri temizliyoruz
         if(state.history.length > 150) state.history.shift();
         
         updateDashboard();
@@ -392,10 +394,12 @@
         renderer.render(scene, camera);
     }
     
+    // YENİ: Grafik hatasını önlemek için history (geçmiş) sıfırlaması eklendi!
     document.getElementById("i-in").oninput = e => { 
         state.interval = +e.target.value; 
         pendingBuses = 0; 
         state.time = 0; 
+        state.history = [{t: 0, q: state.queue}]; // Geçmiş hafıza temizlendi (Grafik kırılması çözümü)
         updateDashboard(); 
     };
 

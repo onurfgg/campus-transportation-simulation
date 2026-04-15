@@ -282,13 +282,13 @@
     const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
     glass.position.y = 11; busGroup.add(glass);
 
-    // DÜZELTİLMİŞ Ön Cam (frontGrass hatası frontGlass olarak düzeltildi)
-    const frontGlass = new THREE.Mesh(new THREE.PlaneGeometry(11, 6), new THREE.MeshStandardMaterial({color: 0x050505, roughness: 0.1, metalness: 0.8}));
-    frontGlass.position.set(20.1, 11, 0); 
-    frontGlass.rotation.y = Math.PI / 2; 
-    frontGlass.rotation.x = -Math.PI / 18; 
+    // DÜZELTİLMİŞ ÖN CAM (Yamulma giderildi, düz ve milimetrik oturan jilet gibi tasarım)
+    const frontGlass = new THREE.Mesh(new THREE.PlaneGeometry(11.5, 8.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
+    frontGlass.position.set(20.05, 11.5, 0); // Üst gövde ile hizalandı
+    frontGlass.rotation.y = Math.PI / 2; // Sadece dışarı bakması için döndürüldü
     busGroup.add(frontGlass);
 
+    // LED TABELA (Ön camın üst kısmına tam olarak oturtuldu)
     const ledCanvas = document.createElement('canvas');
     ledCanvas.width = 128; ledCanvas.height = 64;
     const ctxLed = ledCanvas.getContext('2d');
@@ -300,10 +300,12 @@
     
     const ledTexture = new THREE.CanvasTexture(ledCanvas);
     const ledMat = new THREE.MeshBasicMaterial({ map: ledTexture });
-    const routeSign = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), ledMat);
-    routeSign.position.set(20.05, 14.5, 0); routeSign.rotation.y = Math.PI / 2;
+    const routeSign = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), ledMat);
+    routeSign.position.set(20.06, 14, 0); // Camın hemen üst kısmında, hafifçe önde
+    routeSign.rotation.y = Math.PI / 2;
     busGroup.add(routeSign);
 
+    // Tekerlekler
     const wheelGeo = new THREE.CylinderGeometry(3, 3, 2.5, 16);
     wheelGeo.rotateX(Math.PI / 2); 
     const wheelMat = new THREE.MeshStandardMaterial({color: 0x222222});

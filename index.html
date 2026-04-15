@@ -80,10 +80,11 @@
 <div id="chart-container"></div>
 
 <script>
-    // --- SIMÜLASYON VERİLERİ ---
+    // --- SIMÜLASYON VERİLERİ (Pending Mantığı Eklendi) ---
     let state = { lambda: 18, interval: 3, capacity: 78, queue: 0, time: 0, history: [{t:0, q:0}] };
-    let busState = "idle"; // idle, arriving, boarding, departing
+    let busState = "idle"; 
     let busTimer = 0;
+    let pendingBuses = 0; // Matematiksel senkronizasyon için kuyrukta bekleyen sefer emri sayısı
 
     // --- D3.js GRAFİK (Sawtooth) ---
     const chartW = 340, chartH = 160;
@@ -120,7 +121,6 @@
     scene.background = new THREE.Color(0xbedfff); 
     scene.fog = new THREE.Fog(0xbedfff, 120, 350);
 
-    // İzometrik Kamera
     const aspect = window.innerWidth / window.innerHeight;
     const d = 75;
     const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
@@ -140,14 +140,13 @@
     scene.add(sun);
 
     // --- 3D MODELLER ---
-    // Yol
     const road = new THREE.Mesh(new THREE.PlaneGeometry(1000, 40), new THREE.MeshStandardMaterial({color: 0x444444}));
     road.rotation.x = -Math.PI/2; road.receiveShadow = true; scene.add(road);
     
     const centerLine = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1), new THREE.MeshBasicMaterial({color: 0xffffff}));
     centerLine.rotation.x = -Math.PI/2; centerLine.position.y = 0.1; scene.add(centerLine);
 
-    // DÜZELTME 1: Sonsuz Kaldırım (Genişlik 250'den 1000'e çıkarıldı)
+    // Sonsuz Kaldırım
     const curb = new THREE.Mesh(new THREE.BoxGeometry(1000, 2, 35), new THREE.MeshStandardMaterial({color: 0xa0aab5}));
     curb.position.set(0, 1, -38); curb.receiveShadow = true; scene.add(curb);
 
@@ -169,7 +168,6 @@
     const roofFrame = new THREE.Mesh(new THREE.BoxGeometry(55, 1, 1), frameMat);
     roofFrame.position.set(0, 16, -22); shelterGroup.add(roofFrame);
 
-    // EGO Tabelası
     const signPole = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 18), frameMat);
     signPole.position.set(28, 9, -20); scene.add(signPole);
     
@@ -216,7 +214,7 @@
         busGroup.add(w); wheelRefs.push(w);
     });
     
-    busGroup.position.set(-300, 0, 5); scene.add(busGroup);
+    busGroup.position.set(-350, 0, 5); scene.add(busGroup);
 
     // --- İNSAN FİGÜRLERİ VE ÇEŞİTLİ RENKLER ---
     const students = [];
@@ -244,15 +242,17 @@
         students.push(humanGroup);
     }
 
-    // --- SIMÜLASYON DÖNGÜSÜ ---
+    // --- KUSURSUZ ZAMANLAMA DÖNGÜSÜ (PENDING MANTIĞI) ---
     setInterval(() => {
         state.time++;
-        state.queue += state.lambda;
-        state.history.push({t: state.time, q: state.queue});
+        state.queue += state.lambda; // Kuyruk matematiksel olarak her saniye kusursuz eklenir
         
-        if(state.time > 0 && state.time % state.interval === 0 && busState === "idle") {
-            busState = "arriving";
+        // Eğer sefer vakti geldiyse bunu sisteme emret (animasyonu bekleme)
+        if(state.time > 0 && state.time % state.interval === 0) {
+            pendingBuses++; 
         }
+        
+        state.history.push({t: state.time, q: state.queue});
         updateDashboard();
     }, 1000);
 
@@ -260,28 +260,38 @@
     function animate() {
         requestAnimationFrame(animate);
         
+        // Eğer otobüs boşta ve bekleyen bir sefer emri varsa, hemen yola çıkar
+        if (busState === "idle" && pendingBuses > 0) {
+            busState = "arriving";
+            pendingBuses--; // Emri işleme aldık
+        }
+        
         if(busState === "arriving"){
             let dist = 0 - busGroup.position.x;
-            let speed = dist * 0.05;
-            if(speed < 0.15) speed = 0.15;
+            let speed = dist * 0.08; // Otobüsün gelişi hafif hızlandırıldı
+            if(speed < 0.3) speed = 0.3;
             
             if(busGroup.position.x >= -0.8) {
                 busGroup.position.x = 0;
                 busState = "boarding";
                 setTimeout(() => {
+                    // Yolcular alındığında matematiksel kuyruğu tam o an keskin şekilde düşür
                     state.queue = Math.max(0, state.queue - state.capacity);
+                    state.history.push({t: state.time, q: state.queue}); // Grafikte kusursuz Testere Dişi düşüşü
+                    updateDashboard();
+                    
                     busState = "departing";
                     busTimer = 0;
-                }, 1000); 
+                }, 600); // Gerçekçi ama seri bekleme süresi (600ms)
             } else {
                 busGroup.position.x += speed;
-                wheelRefs.forEach(w => w.rotation.z -= speed * 0.2);
+                wheelRefs.forEach(w => w.rotation.x -= speed * 0.2); // Z ekseni dönüşü X olarak düzeltildi
             }
         } else if(busState === "departing") {
-            busTimer += 0.035; 
+            busTimer += 0.05; // Daha seri kalkış ivmesi
             let speed = busTimer;
             busGroup.position.x += speed;
-            wheelRefs.forEach(w => w.rotation.z -= speed * 0.2);
+            wheelRefs.forEach(w => w.rotation.x -= speed * 0.2);
             
             if(busGroup.position.x > 350) { 
                 busGroup.position.x = -350; 
@@ -297,8 +307,7 @@
                 s.position.lerp(new THREE.Vector3(15 - (row * 3.2), 1, -29 - (col * 4.5)), 0.1);
             } else {
                 s.visible = false;
-                // DÜZELTME 2: Öğrenciler artık sağdan (+100) değil, otobüsün geldiği soldan (-150) sıraya giriyor.
-                s.position.set(-150, 1, -29);
+                s.position.set(-150, 1, -29); // Öğrenciler artık otobüsün geldiği soldan sıraya ekleniyor
             }
         });
 

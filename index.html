@@ -66,11 +66,11 @@
     <h1>📊 EGO 130 Operasyonel İzleme</h1>
     
     <div class="control-group">
-        <label>Yoğunluk (1 Dk'da Gelen) <span class="val-disp"><span id="l-v">18</span> kişi</span></label>
+        <label>Varış Hızı (1 Dakikada Gelen Öğrenci Sayısı) <span class="val-disp"><span id="l-v">18</span> kişi</span></label>
         <input type="range" id="l-in" min="1" max="80" value="18">
     </div>
     <div class="control-group">
-        <label>Sefer Sıklığı (Aralık) <span class="val-disp"><span id="i-v">3</span> dk</span></label>
+        <label>Sefer Sıklığı (Gelme Aralığı) <span class="val-disp"><span id="i-v">3</span> dk'da bir</span></label>
         <input type="range" id="i-in" min="1" max="50" value="3">
     </div>
     <div class="control-group">
@@ -100,7 +100,7 @@
     let busTimer = 0;
     let pendingBuses = 0;
 
-    // --- D3.js GRAFİK (Sawtooth Düzeltmesi) ---
+    // --- D3.js GRAFİK (Kusursuz Sawtooth) ---
     const chartW = 340, chartH = 160;
     const svgChart = d3.select("#chart-container").append("svg").attr("width", chartW).attr("height", chartH);
     const xChart = d3.scaleLinear().domain([0, 60]).range([35, chartW-10]);
@@ -129,15 +129,20 @@
         tag.innerText = isUnstable ? "⚠️ DARBOĞAZ (SİSTEM İSTİKRARSIZ)" : "✅ SİSTEM KARARLI";
         tag.style.background = isUnstable ? "#e74c3c" : "#2ecc71";
 
-        const maxQ = d3.max(state.history, d => d.q) || 0;
+        // YENİ: Grafik hatasını (sola çizme/taşma) engelleyen akıllı filtreleme
+        const startTime = Math.max(0, state.time - 60);
+        const visibleData = state.history.filter(d => d.t >= startTime);
+        
+        const maxQ = d3.max(visibleData, d => d.q) || 0;
         const yMax = Math.max(100, maxQ * 1.2); 
 
-        if(state.time > 60) xChart.domain([state.time - 60, state.time]);
+        if(state.time > 60) xChart.domain([startTime, state.time]);
         yChart.domain([0, yMax]);
         
         xAxis.call(d3.axisBottom(xChart).ticks(6));
         yAxis.call(d3.axisLeft(yChart).ticks(4));
-        linePath.datum(state.history).attr("d", d3.line().x(d => xChart(d.t)).y(d => yChart(d.q)));
+        // Yalnızca ekranda olması gereken (son 60 saniye) verileri çizdiriyoruz
+        linePath.datum(visibleData).attr("d", d3.line().x(d => xChart(d.t)).y(d => yChart(d.q)));
     }
 
     // --- THREE.JS KURULUMU ---
@@ -165,41 +170,36 @@
 
     // --- 3D ÇEVRE VE YOL MODELLERİ ---
     
-    // Asfalt Yol
     const road = new THREE.Mesh(new THREE.PlaneGeometry(1000, 40), new THREE.MeshStandardMaterial({color: 0x4a5568}));
     road.rotation.x = -Math.PI/2; road.receiveShadow = true; scene.add(road);
     
     const centerLine = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1), new THREE.MeshBasicMaterial({color: 0xffffff}));
     centerLine.rotation.x = -Math.PI/2; centerLine.position.y = 0.1; scene.add(centerLine);
 
-    // Kaldırım
     const curb = new THREE.Mesh(new THREE.BoxGeometry(1000, 2, 35), new THREE.MeshStandardMaterial({color: 0xa0aec0}));
     curb.position.set(0, 1, -38); curb.receiveShadow = true; scene.add(curb);
 
-    // YENİ: Çim Zeminler (Yeşillik)
-    const grassMat = new THREE.MeshStandardMaterial({color: 0x557a46, roughness: 1}); // Doğal çim yeşili
+    const grassMat = new THREE.MeshStandardMaterial({color: 0x557a46, roughness: 1});
     
-    // Arka Çim (Durağın arkası)
     const backGrass = new THREE.Mesh(new THREE.PlaneGeometry(1000, 300), grassMat);
     backGrass.rotation.x = -Math.PI/2;
-    backGrass.position.set(0, -0.05, -205); // Y=0'ın hemen altı (titremeyi önler)
+    backGrass.position.set(0, -0.05, -205); 
     backGrass.receiveShadow = true;
     scene.add(backGrass);
 
-    // Ön Çim (Yolun kameraya bakan tarafı)
     const frontGrass = new THREE.Mesh(new THREE.PlaneGeometry(1000, 200), grassMat);
     frontGrass.rotation.x = -Math.PI/2;
     frontGrass.position.set(0, -0.05, 120);
     frontGrass.receiveShadow = true;
     scene.add(frontGrass);
 
-    // YENİ: Gelişmiş Ağaç Dizilimi (Orman Hissi)
+    // YENİ: Görüşü Kapatmayan Mükemmel Ağaç Dizilimi
     const treeMat = new THREE.MeshStandardMaterial({color: 0x27ae60, roughness: 0.8});
     const trunkMat = new THREE.MeshStandardMaterial({color: 0x8b4513});
     
     function createTree(x, z) {
         const treeGroup = new THREE.Group();
-        const scale = 0.7 + Math.random() * 0.7; // Farklı boylarda ağaçlar
+        const scale = 0.7 + Math.random() * 0.7; 
         
         const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 6), trunkMat);
         trunk.position.y = 3; trunk.castShadow = true;
@@ -215,15 +215,15 @@
     }
 
     // Durağın Arkasındaki Yoğun Orman (Kamerayı Kapatmaz)
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i++) { // Sayı artırıldı
         createTree(-400 + Math.random() * 800, -60 - Math.random() * 100);
     }
 
-    // Ön Plandaki Ağaçlar (Sadece uç köşelere yerleştirildi, merkezi görüş tamamen açık!)
-    for (let i = 0; i < 30; i++) {
-        // Ağaçları merkeze (X=0) koymamak için ya çok sağa ya da çok sola yerleştiriyoruz
-        let x = Math.random() > 0.5 ? 150 + Math.random() * 250 : -150 - Math.random() * 250;
-        createTree(x, 30 + Math.random() * 80);
+    // Ön Plandaki Ağaçlar (Kameranın önüne düşecek doğru Z koordinatlarına çekildi!)
+    for (let i = 0; i < 50; i++) { // Sayı artırıldı
+        let x = Math.random() > 0.5 ? 110 + Math.random() * 300 : -110 - Math.random() * 300;
+        // Kamera Z=60'ta. Ağaçları kameranın tam arkasına değil, görüş alanındaki çimlere diziyoruz.
+        createTree(x, 25 + Math.random() * 30);
     }
 
     // PROFESYONEL DURAK MİMARİSİ
@@ -329,6 +329,10 @@
         }
         
         state.history.push({t: state.time, q: state.queue});
+        
+        // YENİ: Tarayıcı belleğini şişirmemek için eski verileri temizliyoruz
+        if(state.history.length > 150) state.history.shift();
+        
         updateDashboard();
     }, 1000);
 

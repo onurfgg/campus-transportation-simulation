@@ -13,14 +13,24 @@
         
         #canvas-container { position: absolute; width: 100vw; height: 100vh; z-index: 0; }
 
-        .linkedin-btn {
+        /* YENİ: Sosyal medya butonları için container ve stiller */
+        .social-container {
             position: absolute; top: 20px; left: 20px; z-index: 15;
-            background: #0077b5; color: white; text-decoration: none;
+            display: flex; gap: 10px;
+        }
+
+        .social-btn {
+            color: white; text-decoration: none;
             padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px;
             display: flex; align-items: center; gap: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: 0.3s;
         }
-        .linkedin-btn:hover { background: #005885; transform: translateY(-2px); }
+        
+        .btn-linkedin { background: #0077b5; }
+        .btn-linkedin:hover { background: #005885; transform: translateY(-2px); }
+        
+        .btn-github { background: #24292e; }
+        .btn-github:hover { background: #1b1f23; transform: translateY(-2px); }
 
         .sidebar {
             position: absolute; top: 70px; left: 20px; width: 310px; z-index: 10;
@@ -58,9 +68,14 @@
 
 <div id="canvas-container"></div>
 
-<a href="https://linkedin.com/in/onurfurkan" target="_blank" class="linkedin-btn">
-    <i class="fab fa-linkedin"></i> Onur Furkan
-</a>
+<div class="social-container">
+    <a href="https://linkedin.com/in/onurfurkan" target="_blank" class="social-btn btn-linkedin">
+        <i class="fab fa-linkedin"></i> Onur Furkan
+    </a>
+    <a href="https://github.com/onurfgg" target="_blank" class="social-btn btn-github">
+        <i class="fab fa-github"></i> onurfgg
+    </a>
+</div>
 
 <div class="sidebar">
     <h1>📊 EGO 130 Operasyonel İzleme</h1>
@@ -191,7 +206,7 @@
     frontGrass.receiveShadow = true;
     scene.add(frontGrass);
 
-    // YENİ: Ağaçların yerini sabitleyen Seeded Random fonksiyonu
+    // Ağaçların yerini sabitleyen Seeded Random fonksiyonu
     let seed = 42;
     function seededRandom() {
         let x = Math.sin(seed++) * 10000;
@@ -203,7 +218,7 @@
     
     function createTree(x, z) {
         const treeGroup = new THREE.Group();
-        const scale = 0.7 + seededRandom() * 0.7; // Sabit rastgelelik kullanıldı
+        const scale = 0.7 + seededRandom() * 0.7; 
         
         const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 6), trunkMat);
         trunk.position.y = 3; trunk.castShadow = true;
@@ -218,7 +233,6 @@
         scene.add(treeGroup);
     }
 
-    // Ağaç dizilimlerinde seededRandom kullanıldığı için sayfa yenilense de ağaçlar aynı kalır
     for (let i = 0; i < 60; i++) { 
         createTree(-400 + seededRandom() * 800, -60 - seededRandom() * 100);
     }
@@ -265,8 +279,17 @@
     const upperBody = new THREE.Mesh(new THREE.BoxGeometry(40, 9, 12), new THREE.MeshStandardMaterial({color: 0xfdfdfd, roughness: 0.4}));
     upperBody.position.y = 11.5; upperBody.castShadow = true; busGroup.add(upperBody);
     
+    // Yan Camlar
     const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
     glass.position.y = 11; busGroup.add(glass);
+
+    // YENİ: Ön Cam
+    const frontGlass = new THREE.Mesh(new THREE.PlaneGeometry(11, 6), new THREE.MeshStandardMaterial({color: 0x050505, roughness: 0.1, metalness: 0.8}));
+    frontGlass.position.set(20.1, 11, 0); // Otobüsün önüne yerleştir (X = 20)
+    frontGrass.rotation.y = Math.PI / 2; // Yüzü dışarı baksın
+    // Hafif bir aerodinamik eğim vermek için (isteğe bağlı, daha gerçekçi durur)
+    frontGlass.rotation.x = -Math.PI / 18; 
+    busGroup.add(frontGlass);
 
     const ledCanvas = document.createElement('canvas');
     ledCanvas.width = 128; ledCanvas.height = 64;
@@ -280,6 +303,7 @@
     const ledTexture = new THREE.CanvasTexture(ledCanvas);
     const ledMat = new THREE.MeshBasicMaterial({ map: ledTexture });
     const routeSign = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), ledMat);
+    // Ön camın hemen üstüne yerleştirildi
     routeSign.position.set(20.05, 14.5, 0); routeSign.rotation.y = Math.PI / 2;
     busGroup.add(routeSign);
 
@@ -300,7 +324,6 @@
     const students = [];
     const maxStudents = 400;
 
-    // Kıyafet renkleri gerçek rastgele (Sayfa yenilendiğinde değişebilir, bu doğaldır)
     function getRandomShirtColor() {
         const colors = [
             0xe74c3c, 0x3498db, 0x2ecc71, 0xf1c40f, 
@@ -394,12 +417,11 @@
         renderer.render(scene, camera);
     }
     
-    // YENİ: Grafik hatasını önlemek için history (geçmiş) sıfırlaması eklendi!
     document.getElementById("i-in").oninput = e => { 
         state.interval = +e.target.value; 
         pendingBuses = 0; 
         state.time = 0; 
-        state.history = [{t: 0, q: state.queue}]; // Geçmiş hafıza temizlendi (Grafik kırılması çözümü)
+        state.history = [{t: 0, q: state.queue}]; 
         updateDashboard(); 
     };
 

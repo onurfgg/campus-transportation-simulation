@@ -13,7 +13,6 @@
         
         #canvas-container { position: absolute; width: 100vw; height: 100vh; z-index: 0; }
 
-        /* YENİ: Sosyal medya butonları için container ve stiller */
         .social-container {
             position: absolute; top: 20px; left: 20px; z-index: 15;
             display: flex; gap: 10px;
@@ -283,11 +282,10 @@
     const glass = new THREE.Mesh(new THREE.BoxGeometry(38, 5, 12.5), new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.1}));
     glass.position.y = 11; busGroup.add(glass);
 
-    // YENİ: Ön Cam
+    // DÜZELTİLMİŞ Ön Cam (frontGrass hatası frontGlass olarak düzeltildi)
     const frontGlass = new THREE.Mesh(new THREE.PlaneGeometry(11, 6), new THREE.MeshStandardMaterial({color: 0x050505, roughness: 0.1, metalness: 0.8}));
-    frontGlass.position.set(20.1, 11, 0); // Otobüsün önüne yerleştir (X = 20)
-    frontGrass.rotation.y = Math.PI / 2; // Yüzü dışarı baksın
-    // Hafif bir aerodinamik eğim vermek için (isteğe bağlı, daha gerçekçi durur)
+    frontGlass.position.set(20.1, 11, 0); 
+    frontGlass.rotation.y = Math.PI / 2; 
     frontGlass.rotation.x = -Math.PI / 18; 
     busGroup.add(frontGlass);
 
@@ -303,7 +301,6 @@
     const ledTexture = new THREE.CanvasTexture(ledCanvas);
     const ledMat = new THREE.MeshBasicMaterial({ map: ledTexture });
     const routeSign = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), ledMat);
-    // Ön camın hemen üstüne yerleştirildi
     routeSign.position.set(20.05, 14.5, 0); routeSign.rotation.y = Math.PI / 2;
     busGroup.add(routeSign);
 

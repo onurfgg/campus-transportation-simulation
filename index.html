@@ -262,7 +262,8 @@
     const signPole = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 18), frameMat);
     signPole.position.set(28, 9, -20); scene.add(signPole);
     
-    const signBoard = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 0.5), new MeshStandardMaterial({color: 0xffffff}));
+    // BURADAKİ HATA DÜZELTİLDİ: THREE.MeshStandardMaterial eklendi!
+    const signBoard = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 0.5), new THREE.MeshStandardMaterial({color: 0xffffff}));
     signBoard.position.set(28, 16, -20);
     const egoText = new THREE.Mesh(new THREE.PlaneGeometry(5, 3), new THREE.MeshBasicMaterial({color: 0xe74c3c})); 
     egoText.position.set(0, 0, 0.3); signBoard.add(egoText);

@@ -285,13 +285,15 @@
                 }, 600); // Gerçekçi ama seri bekleme süresi (600ms)
             } else {
                 busGroup.position.x += speed;
-                wheelRefs.forEach(w => w.rotation.x -= speed * 0.2); // Z ekseni dönüşü X olarak düzeltildi
+                // DÜZELTME: Tekerlekler tekrar doğru eksende (Z ekseni) dönüyor
+                wheelRefs.forEach(w => w.rotation.z -= speed * 0.2); 
             }
         } else if(busState === "departing") {
             busTimer += 0.05; // Daha seri kalkış ivmesi
             let speed = busTimer;
             busGroup.position.x += speed;
-            wheelRefs.forEach(w => w.rotation.x -= speed * 0.2);
+            // DÜZELTME: Tekerlekler tekrar doğru eksende (Z ekseni) dönüyor
+            wheelRefs.forEach(w => w.rotation.z -= speed * 0.2);
             
             if(busGroup.position.x > 350) { 
                 busGroup.position.x = -350; 
@@ -307,7 +309,7 @@
                 s.position.lerp(new THREE.Vector3(15 - (row * 3.2), 1, -29 - (col * 4.5)), 0.1);
             } else {
                 s.visible = false;
-                s.position.set(-150, 1, -29); // Öğrenciler artık otobüsün geldiği soldan sıraya ekleniyor
+                s.position.set(-150, 1, -29); // Öğrenciler otobüsün geldiği soldan sıraya ekleniyor
             }
         });
 
